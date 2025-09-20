@@ -10,4 +10,6 @@ pub enum Token {
 
     Numero(String), Texto(String), Char(char),
     Identificador(String), Boolean(bool),
+    
+    Burro, Fundo,
 }
