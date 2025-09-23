@@ -48,6 +48,25 @@ impl Lexer {
         self.fonte[posicao..self.posicao].iter().collect()
     }
 
+    pub fn ler_numero(&mut self) -> String {
+
+        let posicao = self.posicao;
+
+        while self.caractere_atual.is_digit(10) {
+            self.avancar()
+        }
+
+        if self.caractere_atual == '.' && self.espiadinha().is_digit(10) {
+            self.avancar();
+
+            while self.caractere_atual.is_digit(10) {
+                self.avancar()
+            }
+        }
+
+
+        self.fonte[posicao..self.posicao].iter().collect()
+    }
     pub fn prox_token(&mut self) -> Token {
 
         while self.caractere_atual.is_whitespace() {
@@ -119,6 +138,11 @@ impl Lexer {
                 } else {
                     Token::Negacao
                 }
+            }
+
+            '0' .. '9' => {
+                let numero: String = self.ler_numero();
+                return Token::Numero(numero);
             }
 
             '\0' => Token::Fundo,
