@@ -76,7 +76,7 @@ impl Lexer {
         let token = match self.caractere_atual {
 
 
-            '=' => Token::Igual,
+            
             ';' => Token::PontoVirgula,
             '(' => Token::AbreParentesis,
             ')' => Token::FechaParentesis,
@@ -84,7 +84,18 @@ impl Lexer {
             ']' => Token::FechaColchete,
             '\'' => Token::AspasSimples,
             '"' => Token::Aspas,
+            '{' => Token::AbreChave,
+            '}' => Token::FechaChave,
 
+            '=' => {
+                if self.espiadinha() == '=' {
+                    self.avancar();
+                    Token::Comparar
+                } else {
+                    Token::Igual
+                }
+            },
+            
             '+' => {
                 if self.espiadinha() == '+' {
                     self.avancar();
@@ -95,7 +106,8 @@ impl Lexer {
                 } else {
                     Token::Mais
                 }
-            }
+            },
+            
             '-' => {
                 if self.espiadinha() == '-' {
                     self.avancar();
@@ -106,7 +118,7 @@ impl Lexer {
                 } else {
                     Token::Menos
                 }
-            }
+            },
 
 
             '*' => Token::Multiplicacao,

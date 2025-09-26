@@ -2,16 +2,25 @@
 // mesmo se eles não forem utilizados no main.rs
 mod token;
 mod lexer;
-use lexer::Lexer;
 
-use std::io;
+use crate::lexer::Lexer;
+use crate::token::Token;
 
 
 
 fn main() {
-    let mut code_block = String::new();
+    let codigo = "let valor = 10.5 + ¨ (2*5); != ++--";
 
-    io::stdin().read_line(&mut code_block).unwrap();
+    let mut lexer = Lexer::new(codigo.to_string());
 
-    println!("O valor da string é: {code_block}");
+    println!("Analisando o código \"{}\"\n", codigo);
+
+    loop {
+        let token = lexer.prox_token();
+        println!("Token -> {:?}", token);
+
+        if let Token::Fundo = token {
+            break;
+        }
+    }
 }
