@@ -67,6 +67,34 @@ impl Lexer {
 
         self.fonte[posicao..self.posicao].iter().collect()
     }
+
+    pub fn ler_texto(&mut self) -> String {
+
+        let posicao_inicial = self.posicao + 1;
+
+        loop {
+            self.avancar();
+            if self.caractere_atual == '"' || self.caractere_atual == '\0' {
+                break;
+            }
+        }
+
+        self.fonte[posicao_inicial..self.posicao].iter().collect()
+    }
+
+    pub fn ler_char(&mut self) -> String {
+        let posicao_inicial = self.posicao + 1;
+
+        loop {
+            self.avancar();
+            if self.caractere_atual == '\'' || self.caractere_atual == '\0' {
+                break;
+            }
+        }
+
+        self.fonte[posicao_inicial..self.posicao].iter().collect()
+
+    }
     pub fn prox_token(&mut self) -> Token {
 
         while self.caractere_atual.is_whitespace() {
@@ -82,10 +110,21 @@ impl Lexer {
             ')' => Token::FechaParentesis,
             '[' => Token::AbreColchete,
             ']' => Token::FechaColchete,
-            '\'' => Token::AspasSimples,
-            '"' => Token::Aspas,
+
             '{' => Token::AbreChave,
             '}' => Token::FechaChave,
+
+            '\'' => {
+                let conteudo_char = self.ler_char();
+                Token::ConteudoChar(conteudo_char)
+            },
+
+            '"' => {
+                let texto = self.ler_texto();
+                Token::Texto(texto)
+                
+
+            },
 
             '=' => {
                 if self.espiadinha() == '=' {
@@ -126,6 +165,7 @@ impl Lexer {
             '%' => Token::Modulo,
 
             '&' => Token::Referenciador,
+            
             '>' => {
                 if self.espiadinha() == '=' {
                     self.avancar();
@@ -152,7 +192,7 @@ impl Lexer {
                 }
             }
 
-            '0' .. '9' => {
+            '0' ..='9' => {
                 let numero: String = self.ler_numero();
                 return Token::Numero(numero);
             }
@@ -163,6 +203,7 @@ impl Lexer {
                 if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
 
                     let identificador =self.ler_identificador();
+                    
                     return Token::Identificador(identificador);
 
                 } else {
@@ -170,8 +211,7 @@ impl Lexer {
                 }
             }
         };
-
-
+        
         self.avancar();
 
         token
