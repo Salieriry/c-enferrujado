@@ -110,7 +110,7 @@ impl Lexer {
             ')' => Token::FechaParentesis,
             '[' => Token::AbreColchete,
             ']' => Token::FechaColchete,
-
+            '#' => Token::Hashtag,
             '{' => Token::AbreChave,
             '}' => Token::FechaChave,
 
