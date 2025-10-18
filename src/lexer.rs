@@ -44,12 +44,10 @@ impl Lexer {
 
     // lê um identificador (nome de variável, função, etc.)
     pub fn ler_identificador(&mut self) -> String {
-
         let posicao = self.posicao;
 
         // um identificador começa com uma letra ou sublinhado e pode conter letras, dígitos ou sublinhados
         while self.caractere_atual.is_alphanumeric() || self.caractere_atual == '_' {
-
             self.avancar() // avança para o próximo caractere
         }
 
@@ -59,7 +57,6 @@ impl Lexer {
 
     // lê um número (inteiro ou ponto flutuante)
     pub fn ler_numero(&mut self) -> String {
-
         let posicao = self.posicao;
 
         // um número começa com um dígito e pode conter mais dígitos e um ponto decimal
@@ -82,7 +79,6 @@ impl Lexer {
 
     // lê uma string entre aspas
     pub fn ler_texto(&mut self) -> String {
-
         let posicao_inicial = self.posicao + 1;
 
         // lê até encontrar a próxima aspas ou o fim da fonte
@@ -111,12 +107,10 @@ impl Lexer {
 
         // coleta os caracteres do char e os converte em uma string, retornando o resultado
         self.fonte[posicao_inicial..self.posicao].iter().collect()
-
     }
 
     // obtém o próximo token da fonte
     pub fn prox_token(&mut self) -> Token {
-
         // pula espaços em branco
         while self.caractere_atual.is_whitespace() {
             self.avancar();
@@ -138,13 +132,13 @@ impl Lexer {
             '\'' => {
                 let conteudo_char = self.ler_char();
                 Token::ConteudoChar(conteudo_char)
-            },
+            }
 
             // string entre aspas duplas
             '"' => {
                 let texto = self.ler_texto();
                 Token::Texto(texto)
-            },
+            }
 
             // operadores e símbolos
             '=' => {
@@ -154,8 +148,8 @@ impl Lexer {
                 } else {
                     Token::Igual
                 }
-            },
-            
+            }
+
             '+' => {
                 if self.espiadinha() == '+' {
                     self.avancar();
@@ -166,8 +160,8 @@ impl Lexer {
                 } else {
                     Token::Mais
                 }
-            },
-            
+            }
+
             '-' => {
                 if self.espiadinha() == '-' {
                     self.avancar();
@@ -178,8 +172,7 @@ impl Lexer {
                 } else {
                     Token::Menos
                 }
-            },
-
+            }
 
             '*' => Token::Asterisco,
 
@@ -190,12 +183,13 @@ impl Lexer {
                         self.avancar();
                     }
                     return self.prox_token(); // chama recursivamente para obter o próximo token após o comentário
-
                 } else if self.espiadinha() == '*' {
                     // comentário de bloco
                     self.avancar(); // avança para o '*'
                     self.avancar(); // avança para o próximo caractere após '*'
-                    while !(self.caractere_atual == '*' && self.espiadinha() == '/') && self.caractere_atual != '\0' {
+                    while !(self.caractere_atual == '*' && self.espiadinha() == '/')
+                        && self.caractere_atual != '\0'
+                    {
                         self.avancar();
                     }
                     if self.caractere_atual == '*' && self.espiadinha() == '/' {
@@ -206,12 +200,12 @@ impl Lexer {
                 } else {
                     Token::Divisao
                 }
-            },
+            }
 
             '%' => Token::Modulo,
 
             '&' => Token::EComercial,
-            
+
             // operadores de comparação
             '>' => {
                 if self.espiadinha() == '=' {
@@ -220,7 +214,7 @@ impl Lexer {
                 } else {
                     Token::Maior
                 }
-            },
+            }
             '<' => {
                 if self.espiadinha() == '=' {
                     self.avancar();
@@ -228,7 +222,7 @@ impl Lexer {
                 } else {
                     Token::Menor
                 }
-            },
+            }
 
             '!' => {
                 if self.espiadinha() == '=' {
@@ -240,7 +234,7 @@ impl Lexer {
             }
 
             // números (inteiros e ponto flutuante)
-            '0' ..='9' => {
+            '0'..='9' => {
                 let numero: String = self.ler_numero();
                 return Token::Numero(numero);
             }
@@ -250,17 +244,15 @@ impl Lexer {
             // identificadores (nomes de variáveis, funções, etc.)
             _ => {
                 if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
+                    let identificador = self.ler_identificador(); // lê o identificador
 
-                    let identificador =self.ler_identificador(); // lê o identificador
-                    
                     return Token::Identificador(identificador); // retorna o token de identificador
-
                 } else {
                     Token::Burro // caractere desconhecido
                 }
             }
         };
-        
+
         self.avancar(); // avança para o próximo caractere após reconhecer o token
 
         token
