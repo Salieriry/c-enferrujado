@@ -9,8 +9,7 @@ use crate::token::Token; // importa a enumeração Token do módulo token
 // função principal do programa
 fn main() {
     // código fonte de exemplo para o analisador léxico
-    let codigo = 
-    "#include <iostream>
+    let codigo = "#include <iostream>
 
     // Função principal para testar o lexer.
     int main() {
@@ -40,19 +39,57 @@ fn main() {
         $
 
         return 0;
-        }"; 
+        }";
 
     let mut lexer = Lexer::new(codigo.to_string()); // cria um novo analisador léxico
 
-    println!("Analisando o código \"{}\"\n", codigo); // imprime o código fonte
+    println!("Analisando o código:\n \"{}\"\n", codigo); // imprime o código fonte
 
     // loop para obter e imprimir todos os tokens até o token de fim de arquivo (Fundo)
     loop {
-        let token = lexer.prox_token();
-        println!("Token -> {:?}", token);
+        let token = lexer.prox_token(); //
 
-        if let Token::Fundo = token {
-            break;
+        /*
+        Match(Switch Case) para cuidar da exibição de cada Token manualmente.
+        Isso dificulta na hora de implementar novos Tokens porem
+        remove os avisos do compilador alem de remover a dependencia da flag 'debug'.
+        */
+        match token {
+            Token::Numero(val) => println!("Token -> Numero({})", val),
+            Token::Texto(val) => println!("Token -> Texto(\"{}\")", val),
+            Token::ConteudoChar(val) => println!("Token -> ConteudoChar('{}')", val),
+            Token::Identificador(val) => println!("Token -> Identificador({})", val),
+            Token::Mais => println!("Token -> Mais"),
+            Token::Menos => println!("Token -> Menos"),
+            Token::Igual => println!("Token -> Igual"),
+            Token::PontoVirgula => println!("Token -> PontoVirgula"),
+            Token::AbreParentesis => println!("Token -> AbreParentesis"),
+            Token::FechaParentesis => println!("Token -> FechaParentesis"),
+            Token::AbreChave => println!("Token -> AbreChave"),
+            Token::FechaChave => println!("Token -> FechaChave"),
+            Token::AbreColchete => println!("Token -> AbreColchete"),
+            Token::FechaColchete => println!("Token -> FechaColchete"),
+            Token::Incremento => println!("Token -> Incremento"),
+            Token::Decremento => println!("Token -> Decremento"),
+            Token::Soma => println!("Token -> Soma"),
+            Token::Subtracao => println!("Token -> Subtracao"),
+            Token::Asterisco => println!("Token -> Asterisco"),
+            Token::Divisao => println!("Token -> Divisao"),
+            Token::Modulo => println!("Token -> Modulo"),
+            Token::EComercial => println!("Token -> EComercial"),
+            Token::Maior => println!("Token -> Maior"),
+            Token::Menor => println!("Token -> Menor"),
+            Token::MaiorOuIgual => println!("Token -> MaiorOuIgual"),
+            Token::Comparar => println!("Token -> Comparar"),
+            Token::MenorOuIgual => println!("Token -> MenorOuIgual"),
+            Token::Diferente => println!("Token -> Diferente"),
+            Token::Negacao => println!("Token -> Negacao"),
+            Token::Hashtag => println!("Token -> Hashtag"),
+            Token::Burro => println!("Token -> Burro"),
+            Token::Fundo => {
+                println!("Token -> Fundo");
+                break;
+            }
         }
     }
 }

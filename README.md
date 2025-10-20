@@ -1,1 +1,1 @@
-# Analisador Léxico de C++ em Rust
+# Compilador C/C++ feito em Rust

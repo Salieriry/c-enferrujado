@@ -1,17 +1,41 @@
-#[derive(Debug)] // facilita a depuração imprimindo o token
-pub enum Token { // enumeração dos tipos de tokens
-    Mais, Menos, Igual,
+pub enum Token {
+    // enumeração dos tipos de tokens
+    Mais,
+    Menos,
+    Igual,
 
-    PontoVirgula, AbreParentesis, FechaParentesis, AbreChave, FechaChave, AbreColchete, FechaColchete,
+    PontoVirgula,
+    AbreParentesis,
+    FechaParentesis,
+    AbreChave,
+    FechaChave,
+    AbreColchete,
+    FechaColchete,
 
-    Incremento, Decremento, Soma, Subtracao, Asterisco, Divisao, Modulo,
+    Incremento,
+    Decremento,
+    Soma,
+    Subtracao,
+    Asterisco,
+    Divisao,
+    Modulo,
 
-    EComercial, Maior, Menor, MaiorOuIgual, Comparar, MenorOuIgual, Diferente, Negacao,
+    EComercial,
+    Maior,
+    Menor,
+    MaiorOuIgual,
+    Comparar,
+    MenorOuIgual,
+    Diferente,
+    Negacao,
 
-    Numero(String), Texto(String), ConteudoChar(String),
+    Numero(String),
+    Texto(String),
+    ConteudoChar(String),
     Identificador(String),
 
     Hashtag,
-    
-    Burro, Fundo,
+
+    Burro,
+    Fundo,
 }
