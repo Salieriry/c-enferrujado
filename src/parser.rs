@@ -18,7 +18,6 @@ pub enum Expr {
     Agrupamento(Box<Expr>),
 }
 
-
 pub struct Parser {
     tokens: Vec<Token>,
     posicao_atual: usize,
@@ -90,5 +89,23 @@ impl Parser {
         expr
     }
 
+    pub fn parse_expressao(&mut self) -> Expr {
+        let mut expr = self.parse_termo();
 
+        while let Token::Mais | Token::Menos = self.token_atual {
+            let operador = match self.token_atual.clone() {
+                Token::Mais => Operador::Mais,
+                Token::Menos => Operador::Menos,
+                _ => unreachable!(),
+            };
+            self.avancar();
+            let direita = self.parse_termo();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+        expr
+    }
 }
