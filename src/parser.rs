@@ -1,5 +1,24 @@
 use crate::token::Token;
 
+pub enum Operador {
+    Mais,
+    Menos,
+    Asterisco,
+    Divisao,
+}
+
+pub enum Expr {
+    Numero(f64),
+    Binario {
+        esquerda: Box<Expr>,
+        operador: Operador,
+        direita: Box<Expr>,
+    },
+
+    Agrupamento(Box<Expr>),
+}
+
+
 pub struct Parser {
     tokens: Vec<Token>,
     posicao_atual: usize,
@@ -20,4 +39,36 @@ impl Parser {
             token_atual,
         }
     }
+
+    pub fn avancar(&mut self) {
+        if self.posicao_atual + 1 < self.tokens.len() {
+            self.posicao_atual += 1;
+            self.token_atual = self.tokens[self.posicao_atual].clone();
+        } else {
+            self.token_atual = Token::Fundo;
+        }
+    }
+
+    pub fn parse_fator(&mut self) -> Expr {
+        match self.token_atual.clone() {
+            Token::Numero(valor_string) => {
+                let valor = valor_string.parse::<f64>().unwrap();
+                self.avancar();
+                Expr::Numero(valor)
+            }
+            Token::AbreParentesis => {
+                self.avancar();
+                let expr = self.parse_expressao();
+                if let Token::FechaParentesis = self.token_atual {
+                    self.avancar();
+                } else {
+                    panic!("Esperado ')'");
+                }
+                Expr::Agrupamento(Box::new(expr))
+            }
+            _ => panic!("Esperado número ou '('"),
+        }
+    }
+
+
 }
