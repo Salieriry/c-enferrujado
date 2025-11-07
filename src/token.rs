@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub enum Token {
     // enumeração dos tipos de tokens
     Mais,
