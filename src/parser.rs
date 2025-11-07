@@ -70,5 +70,25 @@ impl Parser {
         }
     }
 
+    pub fn parse_termo(&mut self) -> Expr {
+        let mut expr = self.parse_fator();
+
+        while let Token::Asterisco | Token::Divisao = self.token_atual {
+            let operador = match self.token_atual.clone() {
+                Token::Asterisco => Operador::Asterisco,
+                Token::Divisao => Operador::Divisao,
+                _ => unreachable!(),
+            };
+            self.avancar();
+            let direita = self.parse_fator();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+        expr
+    }
+
 
 }
