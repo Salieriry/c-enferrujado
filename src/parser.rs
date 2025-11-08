@@ -108,4 +108,14 @@ impl Parser {
         }
         expr
     }
+
+    pub fn parse(&mut self) -> Expr {
+        let ast = self.parse_expressao();
+
+        if self.token_atual != Token::Fundo {
+            panic!("Tokens inesperados após a expressão");
+        }
+
+        ast
+    }
 }
