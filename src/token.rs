@@ -40,6 +40,7 @@ pub enum Token {
     Diretiva(String),        // para outras diretivas, ex: #define
 
     Ponto,
+    QuebraLinha,
 
     Burro,
     Fundo,
