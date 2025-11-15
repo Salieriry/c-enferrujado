@@ -25,8 +25,9 @@ impl Lexer {
 
     // avança para o próximo caractere na fonte
     pub fn avancar(&mut self) {
-        if self.posicao + 1 < self.fonte.len() {
-            self.posicao += 1;
+        self.posicao += 1;
+
+        if self.posicao < self.fonte.len() {
             self.caractere_atual = self.fonte[self.posicao];
         } else {
             self.caractere_atual = '\0';
