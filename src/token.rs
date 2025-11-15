@@ -36,6 +36,7 @@ pub enum Token {
     Identificador(String),
 
     Hashtag,
+    Ponto,
 
     Burro,
     Fundo,
