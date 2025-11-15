@@ -35,7 +35,10 @@ pub enum Token {
     ConteudoChar(String),
     Identificador(String),
 
-    Hashtag,
+    InclusaoGlobal(String),  // para <iostream.h>, por exemplo
+    InclusaoLocal(String),   // para "meu_arquivo.h", por exemplo
+    Diretiva(String),        // para outras diretivas, ex: #define
+
     Ponto,
 
     Burro,
