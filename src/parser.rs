@@ -1,12 +1,13 @@
-use crate::token::Token;
 
+use crate::token::Token;
+#[derive(Debug)]
 pub enum Operador {
     Mais,
     Menos,
     Asterisco,
     Divisao,
 }
-
+#[derive(Debug)]
 pub enum Expr {
     Numero(f64),
     Binario {
@@ -16,6 +17,10 @@ pub enum Expr {
     },
 
     Agrupamento(Box<Expr>),
+}
+
+pub enum Stmt {
+    Expressao(Expr),
 }
 
 pub struct Parser {
