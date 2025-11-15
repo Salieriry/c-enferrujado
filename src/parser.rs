@@ -62,6 +62,14 @@ impl Parser {
         }
     }
 
+    fn espiadinha(&self) -> Token {
+        if self.posicao_atual + 1 < self.tokens.len() {
+            self.tokens[self.posicao_atual + 1].clone()
+        } else {
+            Token::Fundo
+        }
+    }
+
     pub fn parse_fator(&mut self) -> Expr {
         match self.token_atual.clone() {
             Token::Numero(valor_string) => {
