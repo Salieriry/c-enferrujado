@@ -110,6 +110,51 @@ impl Lexer {
         self.fonte[posicao_inicial..self.posicao].iter().collect()
     }
 
+    pub fn ler_diretiva_pre_processador(&mut self) -> Token {
+        self.avancar(); // avança para o próximo caractere após '#'
+
+        while self.caractere_atual.is_whitespace() {
+            self.avancar();
+        }
+
+        let comando = self.ler_identificador();
+
+        if comando == "include" {
+            while self.caractere_atual.is_whitespace() {
+                self.avancar();
+            }
+
+            if self.caractere_atual == '<' {
+                let path = self.ler_path_delimitado('>');
+                return Token::InclusaoGlobal(path);
+            } else if self.caractere_atual == '"' {
+                let path = self.ler_path_delimitado('"');
+                return Token::InclusaoLocal(path);
+            } else {
+                return Token::Burro; // formato inválido de inclusão             
+            }
+        } else {
+            return Token::Diretiva(comando);
+        }
+    }
+
+    pub fn ler_path_delimitado(&mut self, delimitador: char) -> String {
+        let posicao_inicial = self.posicao + 1;
+
+        // lê até encontrar o delimitador de fechamento ou o fim da fonte
+        loop {
+            self.avancar();
+            if self.caractere_atual == delimitador || self.caractere_atual == '\0' {
+                break;
+            }
+        }
+
+        let path: String = self.fonte[posicao_inicial..self.posicao].iter().collect();
+
+        self.avancar(); // avança para o próximo caractere após o delimitador de fechamento
+
+        return path;
+    }
     // obtém o próximo token da fonte
     pub fn prox_token(&mut self) -> Token {
         // pula espaços em branco
@@ -125,10 +170,8 @@ impl Lexer {
             ')' => Token::FechaParentesis,
             '[' => Token::AbreColchete,
             ']' => Token::FechaColchete,
-            '#' => Token::Hashtag,
             '{' => Token::AbreChave,
             '}' => Token::FechaChave,
-
             '.' => Token::Ponto,
 
             // caractere entre aspas simples
@@ -141,6 +184,10 @@ impl Lexer {
             '"' => {
                 let texto = self.ler_texto();
                 Token::Texto(texto)
+            }
+
+            '#' => {
+                return self.ler_diretiva_pre_processador();
             }
 
             // operadores e símbolos
