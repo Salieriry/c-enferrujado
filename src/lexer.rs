@@ -129,6 +129,8 @@ impl Lexer {
             '{' => Token::AbreChave,
             '}' => Token::FechaChave,
 
+            '.' => Token::Ponto,
+
             // caractere entre aspas simples
             '\'' => {
                 let conteudo_char = self.ler_char();
