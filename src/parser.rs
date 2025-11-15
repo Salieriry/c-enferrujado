@@ -1,4 +1,6 @@
 
+use core::panic;
+
 use crate::token::Token;
 #[derive(Debug)]
 pub enum Operador {
@@ -21,6 +23,13 @@ pub enum Expr {
 
 pub enum Stmt {
     Expressao(Expr),
+
+    DeclaracaoVariavel{
+        tipo: Token,
+        nome: Token,
+        inicializador: Option<Expr>,
+
+    }
 }
 
 pub struct Parser {
@@ -114,13 +123,23 @@ impl Parser {
         expr
     }
 
-    pub fn parse(&mut self) -> Expr {
-        let ast = self.parse_expressao();
+    pub fn parse_declaracao(&mut self) -> Stmt {
+        let expr = self.parse_expressao();
+        if self.token_atual != Token::PontoVirgula {
+            panic!("Esperado ';' após a expressão");
+        }
+        self.avancar();
 
-        if self.token_atual != Token::Fundo {
-            panic!("Tokens inesperados após a expressão");
+        Stmt::Expressao(expr)
+    }
+
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut declaracoes: Vec<Stmt> = Vec::new();
+
+        while self.token_atual != Token::Fundo {
+            declaracoes.push(self.parse_declaracao());
         }
 
-        ast
+        declaracoes
     }
 }
