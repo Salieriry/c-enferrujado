@@ -1,14 +1,14 @@
 use core::panic;
 
 use crate::token::Token;
-#[derive(Debug)]
+
 pub enum Operador {
     Mais,
     Menos,
     Asterisco,
     Divisao,
 }
-#[derive(Debug)]
+
 pub enum Expr {
     Numero(f64),
     Binario {
@@ -18,6 +18,8 @@ pub enum Expr {
     },
 
     Agrupamento(Box<Expr>),
+
+    Variavel(Token),
 }
 
 pub enum Stmt {
@@ -89,6 +91,11 @@ impl Parser {
                     panic!("Esperado ')'");
                 }
                 Expr::Agrupamento(Box::new(expr))
+            }
+            Token::Identificador(_) => {
+                let var_token = self.token_atual.clone();
+                self.avancar();
+                Expr::Variavel(var_token)
             }
             _ => panic!("Esperado número ou '('"),
         }
