@@ -28,6 +28,11 @@ pub enum Stmt {
         nome: Token,
         inicializador: Option<Expr>,
     },
+    Inclusao {
+        path: String,
+        is_global: bool,
+    },
+    Diretiva(String),
 }
 
 pub struct Parser {
@@ -140,23 +145,52 @@ impl Parser {
     }
 
     pub fn parse_declaracao(&mut self) -> Stmt {
-        let is_var_declaration = if let Token::Identificador(_) = self.token_atual {
-            // verifica se é um identificador
-            if let Token::Identificador(_) = self.espiadinha() {
-                // verifica se o próximo token também é um identificador
-                true // é uma declaração de variável
-            } else {
-                false
+        match &self.token_atual {
+            Token::InclusaoGlobal(_) | Token::InclusaoLocal(_) => self.parse_diretiva_inclusao(),
+            Token::Diretiva(_) => self.parse_diretiva_outra(),
+            Token::Identificador(_) => {
+                if let Token::Identificador(_) = self.espiadinha() {
+                    self.parse_declaracao_variavel()
+                } else {
+                    self.parse_declaracao_expressao()
+                }
             }
+            _ => self.parse_declaracao_expressao(),
+        }
+    }
+
+    pub fn parse_diretiva_inclusao(&mut self) -> Stmt {
+        let token_clonado = self.token_atual.clone();
+
+        self.avancar();
+
+        match token_clonado {
+            Token::InclusaoGlobal(path) => Stmt::Inclusao {
+                path,
+                is_global: true,
+            },
+            Token::InclusaoLocal(path) => Stmt::Inclusao {
+                path,
+                is_global: false,
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn parse_diretiva_outra(&mut self) -> Stmt {
+        let comando = if let Token::Diretiva(cmd) = self.token_atual.clone() {
+            cmd
         } else {
-            false
+            unreachable!()
         };
 
-        if is_var_declaration {
-            self.parse_declaracao_variavel()
-        } else {
-            self.parse_declaracao_expressao()
+        self.avancar();
+
+        while self.token_atual != Token::Fundo && self.token_atual != Token::QuebraLinha {
+            self.avancar();
         }
+
+        Stmt::Diretiva(comando)
     }
 
     pub fn parse_declaracao_variavel(&mut self) -> Stmt {
