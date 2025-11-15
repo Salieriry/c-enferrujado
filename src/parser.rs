@@ -170,6 +170,10 @@ impl Parser {
         let mut declaracoes: Vec<Stmt> = Vec::new();
 
         while self.token_atual != Token::Fundo {
+            if self.token_atual == Token::QuebraLinha {
+                self.avancar();
+                continue;
+            }
             declaracoes.push(self.parse_declaracao());
         }
 
