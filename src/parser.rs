@@ -20,6 +20,11 @@ pub enum Expr {
     Agrupamento(Box<Expr>),
 
     Variavel(Token),
+
+    Atribuicao{
+        nome: Token,
+        valor: Box<Expr>,
+    },
 }
 
 pub enum Stmt {
@@ -141,6 +146,26 @@ impl Parser {
         expr
     }
 
+    pub fn parse_atribuicao(&mut self) -> Expr {
+        let expr_esquerda = self.parse_expressao();
+
+        if self.token_atual == Token::Igual {
+            self.avancar();
+            let valor = self.parse_atribuicao();
+
+            if let Expr::Variavel(var_nome) = expr_esquerda {
+                return Expr::Atribuicao {
+                    nome: var_nome,
+                    valor: Box::new(valor),
+                }
+            } else {
+                panic!("Erro de Sintaxe: Alvo inválido para atribuição.");
+            }
+        } 
+
+        expr_esquerda
+    }
+
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut declaracoes: Vec<Stmt> = Vec::new();
 
@@ -228,7 +253,7 @@ impl Parser {
     }
 
     pub fn parse_declaracao_expressao(&mut self) -> Stmt {
-        let expr = self.parse_expressao();
+        let expr = self.parse_atribuicao();
 
         if self.token_atual != Token::PontoVirgula {
             panic!("Esperado ';' após expressão.");
