@@ -1,4 +1,3 @@
-
 use core::panic;
 
 use crate::token::Token;
@@ -24,12 +23,11 @@ pub enum Expr {
 pub enum Stmt {
     Expressao(Expr),
 
-    DeclaracaoVariavel{
+    DeclaracaoVariavel {
         tipo: Token,
         nome: Token,
         inicializador: Option<Expr>,
-
-    }
+    },
 }
 
 pub struct Parser {
@@ -131,16 +129,6 @@ impl Parser {
         expr
     }
 
-    pub fn parse_declaracao(&mut self) -> Stmt {
-        let expr = self.parse_expressao();
-        if self.token_atual != Token::PontoVirgula {
-            panic!("Esperado ';' após a expressão");
-        }
-        self.avancar();
-
-        Stmt::Expressao(expr)
-    }
-
     pub fn parse(&mut self) -> Vec<Stmt> {
         let mut declaracoes: Vec<Stmt> = Vec::new();
 
@@ -149,5 +137,63 @@ impl Parser {
         }
 
         declaracoes
+    }
+
+    pub fn parse_declaracao(&mut self) -> Stmt {
+        let is_var_declaration = if let Token::Identificador(_) = self.token_atual {
+            // verifica se é um identificador
+            if let Token::Identificador(_) = self.espiadinha() {
+                // verifica se o próximo token também é um identificador
+                true // é uma declaração de variável
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if is_var_declaration {
+            self.parse_declaracao_variavel()
+        } else {
+            self.parse_declaracao_expressao()
+        }
+    }
+
+    pub fn parse_declaracao_variavel(&mut self) -> Stmt {
+        let tipo = self.token_atual.clone();
+        self.avancar();
+
+        let nome = self.token_atual.clone();
+        self.avancar();
+
+        let inicializador: Option<Expr>;
+        if self.token_atual == Token::Igual {
+            self.avancar();
+            inicializador = Some(self.parse_expressao());
+        } else {
+            inicializador = None;
+        }
+
+        if self.token_atual != Token::PontoVirgula {
+            panic!("Esperado ';' após declaração de variável.");
+        }
+        self.avancar();
+
+        Stmt::DeclaracaoVariavel {
+            tipo,
+            nome,
+            inicializador,
+        }
+    }
+
+    pub fn parse_declaracao_expressao(&mut self) -> Stmt {
+        let expr = self.parse_expressao();
+
+        if self.token_atual != Token::PontoVirgula {
+            panic!("Esperado ';' após expressão.");
+        }
+        self.avancar();
+
+        Stmt::Expressao(expr)
     }
 }
