@@ -158,12 +158,13 @@ impl Lexer {
     // obtém o próximo token da fonte
     pub fn prox_token(&mut self) -> Token {
         // pula espaços em branco
-        while self.caractere_atual.is_whitespace() {
+        while self.caractere_atual.is_whitespace() && self.caractere_atual != '\n' {
             self.avancar();
         }
 
         // determina o tipo de token com base no caractere atual
         let token = match self.caractere_atual {
+            '\n' => Token::QuebraLinha,
             // símbolos de pontuação
             ';' => Token::PontoVirgula,
             '(' => Token::AbreParentesis,
