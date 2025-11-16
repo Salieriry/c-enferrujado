@@ -32,6 +32,11 @@ pub enum Expr {
         nome: Token,
         valor: Box<Expr>,
     },
+
+    Unario {
+        operador: Token,
+        direita: Box<Expr>,
+    },
 }
 
 pub enum Stmt {
@@ -102,6 +107,20 @@ impl Parser {
 
     pub fn parse_fator(&mut self) -> Expr {
         match self.token_atual.clone() {
+            Token::Menos
+            | Token::Decremento
+            | Token::Incremento
+            | Token::Negacao
+            | Token::EComercial => {
+                let operador = self.token_atual.clone();
+                self.avancar();
+                let direita = self.parse_fator();
+                Expr::Unario {
+                    operador,
+                    direita: Box::new(direita),
+                }
+            }
+
             Token::Numero(valor_string) => {
                 let valor = valor_string.parse::<f64>().unwrap();
                 self.avancar();
@@ -122,7 +141,16 @@ impl Parser {
                 self.avancar();
                 Expr::Variavel(var_token)
             }
-            _ => panic!("Esperado número ou '('"),
+            _ => {
+                if self.token_atual == Token::Burro {
+                    panic!("Erro de Sintaxe: Caractere ilegal encontrado pelo lexer.");
+                } else {
+                    // Senão, reporte o erro de parsing esperado
+                    panic!(
+                        "Erro de Sintaxe: Fator inesperado. Esperado num, '(', var ou op. unário"
+                    );
+                }
+            }
         }
     }
 
@@ -169,7 +197,13 @@ impl Parser {
     pub fn parse_comparacao(&mut self) -> Expr {
         let mut expr = self.parse_expressao();
 
-        while let Token::Maior | Token::Menor | Token::MaiorOuIgual | Token::MenorOuIgual | Token::Comparar | Token::Diferente = self.token_atual {
+        while let Token::Maior
+        | Token::Menor
+        | Token::MaiorOuIgual
+        | Token::MenorOuIgual
+        | Token::Comparar
+        | Token::Diferente = self.token_atual
+        {
             let operador = match self.token_atual.clone() {
                 Token::Maior => Operador::Maior,
                 Token::Menor => Operador::Menor,
@@ -245,8 +279,6 @@ impl Parser {
         declaracoes
     }
 
-    
-
     pub fn parse_diretiva_inclusao(&mut self) -> Stmt {
         let token_clonado = self.token_atual.clone();
 
@@ -312,14 +344,11 @@ impl Parser {
         }
 
         if self.token_atual != Token::FechaChave {
-             panic!("Esperava '}}' para fechar o corpo da função");
+            panic!("Esperava '}}' para fechar o corpo da função");
         }
         self.avancar();
 
-        Stmt::DeclaracaoFuncao {
-            tipo_retorno,
-            nome
-        }
+        Stmt::DeclaracaoFuncao { tipo_retorno, nome }
     }
 
     pub fn parse_declaracao_variavel(&mut self) -> Stmt {
