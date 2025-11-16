@@ -299,6 +299,7 @@ impl Lexer {
 
                 '%' => {
                     if self.espiadinha() == '=' {
+                        self.avancar();
                         Token::ModuloIgual
                     } else {
                         Token::Modulo
