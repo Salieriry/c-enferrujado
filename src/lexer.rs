@@ -262,9 +262,18 @@ impl Lexer {
                     Token::EComercialDuplo
                 } else {
                     Token::EComercial
+                }                
+            }
+
+            '|' => {
+                if self.espiadinha() == '|' {
+                    self.avancar();
+                    Token::BarraVerticalDupla
+                } else {
+                    Token::BarraVertical
                 }
-                
             } 
+            
             // operadores de comparação
             '>' => {
                 if self.espiadinha() == '=' {
