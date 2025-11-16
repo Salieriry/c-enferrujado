@@ -171,7 +171,7 @@ impl Parser {
 
         while let Token::Maior | Token::Menor | Token::MaiorOuIgual | Token::MenorOuIgual | Token::Comparar | Token::Diferente = self.token_atual {
             let operador = match self.token_atual.clone() {
-                Token::Maior => Operador::Comparar,
+                Token::Maior => Operador::Maior,
                 Token::Menor => Operador::Menor,
                 Token::MaiorOuIgual => Operador::MaiorOuIgual,
                 Token::MenorOuIgual => Operador::MenorOuIgual,
