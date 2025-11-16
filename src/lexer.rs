@@ -57,8 +57,9 @@ impl Lexer {
     }
 
     // lê um número (inteiro ou ponto flutuante)
-    pub fn ler_numero(&mut self) -> String {
+    pub fn ler_numero(&mut self) -> Token {
         let posicao = self.posicao;
+        let mut is_float = false;
 
         // um número começa com um dígito e pode conter mais dígitos e um ponto decimal
         while self.caractere_atual.is_digit(10) {
@@ -67,6 +68,7 @@ impl Lexer {
 
         // verifica se há um ponto decimal seguido por mais dígitos
         if self.caractere_atual == '.' && self.espiadinha().is_digit(10) {
+            is_float = true;
             self.avancar();
 
             while self.caractere_atual.is_digit(10) {
@@ -74,8 +76,13 @@ impl Lexer {
             }
         }
 
-        // coleta os caracteres do número e os converte em uma string
-        self.fonte[posicao..self.posicao].iter().collect()
+        let numero_str: String = self.fonte[posicao..self.posicao].iter().collect();
+
+        if is_float {
+            Token::NumeroFloat(numero_str)
+        } else {
+            Token::NumeroInt(numero_str)
+        }
     }
 
     // lê uma string entre aspas
@@ -343,8 +350,7 @@ impl Lexer {
 
             // números (inteiros e ponto flutuante)
             '0'..='9' => {
-                let numero: String = self.ler_numero();
-                return Token::Numero(numero);
+                return self.ler_numero()
             }
 
             '\0' => Token::Fundo,
