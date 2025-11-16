@@ -6,8 +6,10 @@ use crate::token::Token;
 pub struct Parametro {
     pub tipo: Vec<Token>,
     pub nome: Token,
+    pub tamanho_array: Option<Expr>,
 }
 
+#[derive(Clone)]
 pub enum Operador {
     Mais,
     Menos,
@@ -28,6 +30,7 @@ pub enum Operador {
     BarraVerticalDupla,
 }
 
+#[derive(Clone)]
 pub enum Expr {
     NumeroInt(i64),
     NumeroFloat(f64),
@@ -69,6 +72,7 @@ pub enum Expr {
 
     CharLiteral(char),
     StringLiteral(String),
+    ArrayDim,
 }
 
 pub enum Stmt {
@@ -406,7 +410,6 @@ impl Parser {
             let valor = self.parse_atribuicao();
 
             match expr_esquerda {
-                // Permite Var, AcessoArray, ou Unario (*ptr) como alvo
                 Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
                     return Expr::Atribuicao {
                         alvo: Box::new(expr_esquerda),
@@ -426,7 +429,6 @@ impl Parser {
             let valor = self.parse_atribuicao();
 
             match expr_esquerda {
-                // Permite os mesmos alvos para atribuição composta
                 Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
                     return Expr::AtribuicaoComposta {
                         alvo: Box::new(expr_esquerda),
@@ -610,9 +612,10 @@ impl Parser {
         if self.token_atual != Token::FechaParentesis {
             loop {
                 let mut tipo_param: Vec<Token> = Vec::new();
+                let mut tamanho_array: Option<Expr> = None;
                 while self.token_atual != Token::Fundo {
                     if let Token::Identificador(_) = self.token_atual {
-                        if let Token::Virgula | Token::FechaParentesis = self.espiadinha() {
+                        if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete = self.espiadinha() {
                             break;
                         }
                     }
@@ -626,11 +629,25 @@ impl Parser {
                 let nome_param = self.token_atual.clone();
                 self.avancar();
 
-                // (Opcional: Adicionar suporte para `int arr[]` se necessário)
+                if self.token_atual == Token::AbreColchete {
+                    self.avancar();
+
+                    if self.token_atual == Token::FechaColchete {
+                        tamanho_array = Some(Expr::ArrayDim);
+                    } else {
+                        tamanho_array = Some(self.parse_atribuicao());
+                    }
+
+                    if self.token_atual != Token::FechaColchete {
+                         panic!("Esperado ']' em parâmetro de array.");
+                    }
+                    self.avancar();
+                }
 
                 parametros.push(Parametro {
                     tipo: tipo_param,
                     nome: nome_param,
+                    tamanho_array,
                 });
 
                 if self.token_atual == Token::Virgula {
