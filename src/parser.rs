@@ -21,7 +21,7 @@ pub enum Expr {
 
     Variavel(Token),
 
-    Atribuicao{
+    Atribuicao {
         nome: Token,
         valor: Box<Expr>,
     },
@@ -40,6 +40,11 @@ pub enum Stmt {
         is_global: bool,
     },
     Diretiva(String),
+
+    DeclaracaoFuncao {
+        tipo_retorno: Token,
+        nome: Token,
+    },
 }
 
 pub struct Parser {
@@ -75,6 +80,14 @@ impl Parser {
     fn espiadinha(&self) -> Token {
         if self.posicao_atual + 1 < self.tokens.len() {
             self.tokens[self.posicao_atual + 1].clone()
+        } else {
+            Token::Fundo
+        }
+    }
+
+    fn espiar_dois_passos(&self) -> Token {
+        if self.posicao_atual + 2 < self.tokens.len() {
+            self.tokens[self.posicao_atual + 2].clone()
         } else {
             Token::Fundo
         }
@@ -157,11 +170,11 @@ impl Parser {
                 return Expr::Atribuicao {
                     nome: var_nome,
                     valor: Box::new(valor),
-                }
+                };
             } else {
                 panic!("Erro de Sintaxe: Alvo inválido para atribuição.");
             }
-        } 
+        }
 
         expr_esquerda
     }
@@ -186,7 +199,11 @@ impl Parser {
             Token::Diretiva(_) => self.parse_diretiva_outra(),
             Token::Identificador(_) => {
                 if let Token::Identificador(_) = self.espiadinha() {
-                    self.parse_declaracao_variavel()
+                    if let Token::AbreParentesis = self.espiar_dois_passos() {
+                        self.parse_declaracao_funcao()
+                    } else {
+                        self.parse_declaracao_variavel()
+                    }
                 } else {
                     self.parse_declaracao_expressao()
                 }
@@ -227,6 +244,47 @@ impl Parser {
         }
 
         Stmt::Diretiva(comando)
+    }
+
+    pub fn parse_declaracao_funcao(&mut self) -> Stmt {
+        let tipo_retorno = self.token_atual.clone();
+        self.avancar();
+
+        let nome = self.token_atual.clone();
+        self.avancar();
+
+        if self.token_atual != Token::AbreParentesis {
+            panic!("Esperado '(' após o nome da função.");
+        }
+        self.avancar();
+
+        while self.token_atual != Token::FechaParentesis && self.token_atual != Token::Fundo {
+            self.avancar();
+        }
+
+        if self.token_atual != Token::FechaParentesis {
+            panic!("Esperado ')' após os parâmetros da função.");
+        }
+        self.avancar();
+
+        if self.token_atual != Token::AbreChave {
+            panic!("Esperava '{{' para iniciar o corpo da função");
+        }
+        self.avancar();
+
+        while self.token_atual != Token::FechaChave && self.token_atual != Token::Fundo {
+            self.avancar();
+        }
+
+        if self.token_atual != Token::FechaChave {
+             panic!("Esperava '}}' para fechar o corpo da função");
+        }
+        self.avancar();
+
+        Stmt::DeclaracaoFuncao {
+            tipo_retorno,
+            nome
+        }
     }
 
     pub fn parse_declaracao_variavel(&mut self) -> Stmt {
