@@ -24,7 +24,7 @@ pub enum Token {
 
     EComercial,
     EComercialDuplo,
-    BarraVertica,
+    BarraVertical,
     BarraVerticalDupla,
     Maior,
     Menor,

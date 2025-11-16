@@ -256,8 +256,15 @@ impl Lexer {
 
             '%' => Token::Modulo,
 
-            '&' => Token::EComercial,
-
+            '&' => {
+                if self.espiadinha() == '&' {
+                    self.avancar();
+                    Token::EComercialDuplo
+                } else {
+                    Token::EComercial
+                }
+                
+            } 
             // operadores de comparação
             '>' => {
                 if self.espiadinha() == '=' {
