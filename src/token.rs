@@ -37,7 +37,8 @@ pub enum Token {
     Diferente,
     Negacao,
 
-    Numero(String),
+    NumeroInt(String),
+    NumeroFloat(String),
     Texto(String),
     ConteudoChar(char),
     Identificador(String),
