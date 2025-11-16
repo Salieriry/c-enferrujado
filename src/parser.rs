@@ -14,6 +14,8 @@ pub enum Operador {
     MaiorOuIgual,
     MenorOuIgual,
     Diferente,
+
+    EComercial,
 }
 
 pub enum Expr {
@@ -245,6 +247,27 @@ impl Parser {
         expr
     }
 
+    pub fn parse_bitwise_and(&mut self) -> Expr {
+        let mut expr = self.parse_comparacao();
+
+        while let Token::EComercial = self.token_atual {
+            let operador = match self.token_atual.clone() {
+                Token::EComercial => Operador::EComercial,
+                _ => unreachable!(),
+            };
+            self.avancar();
+
+            let direita = self.parse_comparacao();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+
+        expr
+    }
+
     pub fn parse_comparacao(&mut self) -> Expr {
         let mut expr = self.parse_expressao();
 
@@ -277,8 +300,10 @@ impl Parser {
         expr
     }
 
+    
+
     pub fn parse_atribuicao(&mut self) -> Expr {
-        let expr_esquerda = self.parse_comparacao();
+        let expr_esquerda = self.parse_bitwise_and();
 
         if self.token_atual == Token::Igual {
             self.avancar();
