@@ -430,21 +430,18 @@ impl Parser {
         }
         self.avancar();
 
-        if self.token_atual != Token::AbreChave {
-            panic!("Esperava '{{' para iniciar o corpo da função");
-        }
-        self.avancar();
 
-        while self.token_atual != Token::FechaChave && self.token_atual != Token::Fundo {
+        while self.token_atual == Token::QuebraLinha {
             self.avancar();
         }
 
-        if self.token_atual != Token::FechaChave {
-            panic!("Esperava '}}' para fechar o corpo da função");
-        }
-        self.avancar();
+        let corpo = self.parse_bloco();
 
-        Stmt::DeclaracaoFuncao { tipo_retorno, nome }
+        Stmt::DeclaracaoFuncao { 
+            tipo_retorno, 
+            nome,
+            corpo: Box::new(corpo),
+        }
     }
 
     pub fn parse_declaracao_variavel(&mut self) -> Stmt {
