@@ -80,7 +80,6 @@ impl Lexer {
 
     // lê uma string entre aspas
     pub fn ler_texto(&mut self) -> String {
-        let posicao_inicial = self.posicao + 1;
         let mut chars: Vec<char> = Vec::new();
 
         // lê até encontrar a próxima aspas ou o fim da fonte
@@ -94,7 +93,7 @@ impl Lexer {
                     't' => chars.push('\t'),
                     '"' => chars.push('"'),
                     '\\' => chars.push('\\'),
-                    _ => chars.push(self.caractere_atual)
+                    _ => chars.push(self.caractere_atual),
                 }
                 continue;
             }
@@ -111,19 +110,30 @@ impl Lexer {
     }
 
     // lê um caractere entre aspas simples
-    pub fn ler_char(&mut self) -> String {
-        let posicao_inicial = self.posicao + 1;
+    pub fn ler_char(&mut self) -> char {
+        self.avancar();
 
-        // lê até encontrar a próxima aspas simples ou o fim da fonte
-        loop {
+        let c: char;
+        if self.caractere_atual == '\\' {
             self.avancar();
-            if self.caractere_atual == '\'' || self.caractere_atual == '\0' {
-                break;
-            }
+            c = match self.caractere_atual {
+                'n' => '\n',
+                't' => '\t',
+                '\'' => '\'',
+                '\\' => '\\',
+                _ => self.caractere_atual,
+            };
+            self.avancar();
+        } else {
+            c = self.caractere_atual;
+            self.avancar();
         }
 
-        // coleta os caracteres do char e os converte em uma string, retornando o resultado
-        self.fonte[posicao_inicial..self.posicao].iter().collect()
+        if self.caractere_atual != '\'' {
+            panic!("Erro Léxico: Char literal não fechado ou longo demais.");
+        }
+
+        return c;
     }
 
     pub fn ler_diretiva_pre_processador(&mut self) -> Token {
