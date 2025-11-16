@@ -29,7 +29,8 @@ pub enum Operador {
 }
 
 pub enum Expr {
-    Numero(f64),
+    NumeroInt(i64),
+    NumeroFloat(f64),
     Binario {
         esquerda: Box<Expr>,
         operador: Operador,
@@ -177,10 +178,15 @@ impl Parser {
                 }
             }
 
-            Token::Numero(valor_string) => {
+            Token::NumeroInt(valor_string) => {
+                let valor = valor_string.parse::<i64>().unwrap();
+                self.avancar();
+                Expr::NumeroInt(valor)
+            }
+            Token::NumeroFloat(valor_string) => {
                 let valor = valor_string.parse::<f64>().unwrap();
                 self.avancar();
-                Expr::Numero(valor)
+                Expr::NumeroFloat(valor)
             }
             Token::ConteudoChar(valor_char) => {
                 self.avancar();
@@ -320,9 +326,9 @@ impl Parser {
         while let Token::BarraVertical = &self.token_atual {
             let operador = Operador::BarraVertical;
             self.avancar();
-            
-            let direita = self.parse_bitwise_and(); 
-            
+
+            let direita = self.parse_bitwise_and();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
                 operador,
