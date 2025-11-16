@@ -44,6 +44,11 @@ pub enum Expr {
         direita: Box<Expr>,
     },
 
+    Posfixa {
+        expressao: Box<Expr>,
+        operador: Token,
+    },
+
     CharLiteral(String),
     StringLiteral(String),
 }
@@ -125,7 +130,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_fator(&mut self) -> Expr {
+    pub fn parse_primario(&mut self) -> Expr {
         match self.token_atual.clone() {
             Token::Menos
             | Token::Decremento
@@ -134,7 +139,7 @@ impl Parser {
             | Token::EComercial => {
                 let operador = self.token_atual.clone();
                 self.avancar();
-                let direita = self.parse_fator();
+                let direita = self.parse_primario();
                 Expr::Unario {
                     operador,
                     direita: Box::new(direita),
@@ -181,6 +186,25 @@ impl Parser {
         }
     }
 
+    pub fn parse_fator(&mut self) -> Expr {
+        let mut expr = self.parse_primario();
+
+        loop {
+            match self.token_atual.clone() {
+                Token::Incremento | Token::Decremento => {
+                    let operador_posfixo = self.token_atual.clone();
+                    self.avancar();
+                    
+                    expr = Expr::Posfixa {
+                        expressao: Box::new(expr),
+                        operador: operador_posfixo,
+                    };
+                }
+                _ => break,
+            }
+        }
+        expr
+    }
     pub fn parse_termo(&mut self) -> Expr {
         let mut expr = self.parse_fator();
 
@@ -191,7 +215,7 @@ impl Parser {
                 _ => unreachable!(),
             };
             self.avancar();
-            let direita = self.parse_fator();
+            let direita = self.parse_primario();
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
                 operador,
@@ -527,3 +551,4 @@ impl Parser {
         Stmt::Expressao(expr)
     }
 }
+
