@@ -56,6 +56,7 @@ pub enum Stmt {
     DeclaracaoFuncao {
         tipo_retorno: Vec<Token>,
         nome: Token,
+        corpo: Box<Stmt>,
     },
 
     If {
