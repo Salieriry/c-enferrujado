@@ -23,6 +23,9 @@ pub enum Operador {
     Modulo,
 
     EComercial,
+    EComercialDuplo,
+    BarraVertical,
+    BarraVerticalDupla,
 }
 
 pub enum Expr {
@@ -91,7 +94,7 @@ pub enum Stmt {
     DeclaracaoFuncao {
         tipo_retorno: Vec<Token>,
         nome: Token,
-        parametros:Vec<Parametro>,
+        parametros: Vec<Parametro>,
         corpo: Box<Stmt>,
     },
 
@@ -317,6 +320,38 @@ impl Parser {
         expr
     }
 
+    pub fn parse_logical_and(&mut self) -> Expr {
+        let mut expr = self.parse_bitwise_and();
+
+        while let Token::EComercialDuplo = &self.token_atual {
+            let operador = Operador::EComercialDuplo;
+            self.avancar();
+            let direita = self.parse_bitwise_and();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+        expr
+    }
+
+    pub fn parse_logical_or(&mut self) -> Expr {
+        let mut expr = self.parse_logical_and();
+
+        while let Token::BarraVerticalDupla = &self.token_atual {
+            let operador = Operador::BarraVerticalDupla;
+            self.avancar();
+            let direita = self.parse_logical_and();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+        expr
+    }
+
     pub fn parse_comparacao(&mut self) -> Expr {
         let mut expr = self.parse_expressao();
 
@@ -350,7 +385,7 @@ impl Parser {
     }
 
     pub fn parse_atribuicao(&mut self) -> Expr {
-        let expr_esquerda = self.parse_bitwise_and();
+        let expr_esquerda = self.parse_logical_or();
 
         if self.token_atual == Token::Igual {
             self.avancar();
@@ -372,7 +407,12 @@ impl Parser {
                 }
                 _ => panic!("Erro de Sintaxe: Alvo inválido para atribuição."),
             }
-        } else if let Token::Soma | Token::Subtracao = self.token_atual.clone() {
+        } else if let Token::SomaIgual
+        | Token::SubtracaoIgual
+        | Token::MultiplicacaoIgual
+        | Token::DivisaoIgual
+        | Token::ModuloIgual = self.token_atual.clone()
+        {
             let operador = self.token_atual.clone();
             self.avancar();
             let valor = self.parse_atribuicao();
