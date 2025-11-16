@@ -43,7 +43,7 @@ pub enum Stmt {
     Expressao(Expr),
 
     DeclaracaoVariavel {
-        tipo: Token,
+        tipo: Vec<Token>,
         nome: Token,
         inicializador: Option<Expr>,
     },
@@ -54,7 +54,7 @@ pub enum Stmt {
     Diretiva(String),
 
     DeclaracaoFuncao {
-        tipo_retorno: Token,
+        tipo_retorno: Vec<Token>,
         nome: Token,
     },
 }
@@ -314,9 +314,22 @@ impl Parser {
     }
 
     pub fn parse_declaracao_funcao(&mut self) -> Stmt {
-        let tipo_retorno = self.token_atual.clone();
-        self.avancar();
+        let mut tipo_retorno: Vec<Token> = Vec::new();
 
+        while self.token_atual != Token::Fundo {
+            if let Token::Identificador(_) = self.token_atual {
+                if let Token::AbreParentesis = self.espiadinha() {
+                    break;
+                }
+            }
+            tipo_retorno.push(self.token_atual.clone());
+            self.avancar();
+           
+        }
+
+        if !matches!(self.token_atual, Token::Identificador(_)) {
+            panic!("Esperado nome da função após o tipo de retorno.");
+        }
         let nome = self.token_atual.clone();
         self.avancar();
 
@@ -352,8 +365,21 @@ impl Parser {
     }
 
     pub fn parse_declaracao_variavel(&mut self) -> Stmt {
-        let tipo = self.token_atual.clone();
-        self.avancar();
+        let mut tipo: Vec<Token> = Vec::new();
+
+        while self.token_atual != Token::Fundo {
+            if let Token::Identificador(_) = self.token_atual {
+                if let Token::Igual | Token::PontoVirgula | Token::AbreColchete = self.espiadinha() {
+                    break;
+                }
+            }
+            tipo.push(self.token_atual.clone());
+            self.avancar();
+        }
+
+        if !matches!(self.token_atual, Token::Identificador(_)) {
+            panic!("Esperado nome de variável após o tipo.");
+        }
 
         let nome = self.token_atual.clone();
         self.avancar();
