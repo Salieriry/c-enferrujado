@@ -53,7 +53,7 @@ pub enum Expr {
     },
 
     AcessoArray {
-        nome:Box<Expr>,
+        nome: Box<Expr>,
         indice: Box<Expr>,
     },
 
@@ -96,7 +96,7 @@ pub enum Stmt {
 
     Bloco {
         declaracoes: Vec<Stmt>,
-    }
+    },
 }
 
 pub struct Parser {
@@ -166,7 +166,7 @@ impl Parser {
                 self.avancar();
                 Expr::Numero(valor)
             }
-            Token::ConteudoChar(valor_char) => {                
+            Token::ConteudoChar(valor_char) => {
                 self.avancar();
                 Expr::CharLiteral(valor_char)
             }
@@ -209,7 +209,7 @@ impl Parser {
                 Token::Incremento | Token::Decremento => {
                     let operador_posfixo = self.token_atual.clone();
                     self.avancar();
-                    
+
                     expr = Expr::Posfixa {
                         expressao: Box::new(expr),
                         operador: operador_posfixo,
@@ -230,7 +230,6 @@ impl Parser {
                         nome: Box::new(expr),
                         indice: Box::new(indice),
                     }
-
                 }
                 _ => break,
             }
@@ -331,8 +330,6 @@ impl Parser {
         expr
     }
 
-    
-
     pub fn parse_atribuicao(&mut self) -> Expr {
         let expr_esquerda = self.parse_bitwise_and();
 
@@ -360,7 +357,6 @@ impl Parser {
             let operador = self.token_atual.clone();
             self.avancar();
             let valor = self.parse_atribuicao();
-            
 
             if let Expr::Variavel(var_nome) = expr_esquerda {
                 return Expr::AtribuicaoComposta {
@@ -391,6 +387,8 @@ impl Parser {
                     } else {
                         self.parse_declaracao_variavel()
                     }
+                } else if let Token::Asterisco = self.espiadinha() {
+                    self.parse_declaracao_variavel()
                 } else {
                     self.parse_declaracao_expressao()
                 }
@@ -432,12 +430,12 @@ impl Parser {
     }
 
     pub fn parse_declaracao_if(&mut self) -> Stmt {
-        self.avancar(); 
+        self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
             panic!("Esperado '(' após 'if'");
         }
-        self.avancar(); 
+        self.avancar();
 
         let condicao = self.parse_atribuicao();
 
@@ -460,11 +458,9 @@ impl Parser {
                     } else {
                         bloco_else = Some(Box::new(self.parse_bloco()));
                     }
-
                 } else {
                     bloco_else = Some(Box::new(self.parse_bloco()));
                 }
-                
             }
         }
 
@@ -497,7 +493,7 @@ impl Parser {
         }
         self.avancar();
 
-        Stmt::Bloco { declaracoes}
+        Stmt::Bloco { declaracoes }
     }
 
     pub fn parse_diretiva_outra(&mut self) -> Stmt {
@@ -527,7 +523,6 @@ impl Parser {
             }
             tipo_retorno.push(self.token_atual.clone());
             self.avancar();
-           
         }
 
         if !matches!(self.token_atual, Token::Identificador(_)) {
@@ -550,15 +545,14 @@ impl Parser {
         }
         self.avancar();
 
-
         while self.token_atual == Token::QuebraLinha {
             self.avancar();
         }
 
         let corpo = self.parse_bloco();
 
-        Stmt::DeclaracaoFuncao { 
-            tipo_retorno, 
+        Stmt::DeclaracaoFuncao {
+            tipo_retorno,
             nome,
             corpo: Box::new(corpo),
         }
@@ -569,7 +563,8 @@ impl Parser {
 
         while self.token_atual != Token::Fundo {
             if let Token::Identificador(_) = self.token_atual {
-                if let Token::Igual | Token::PontoVirgula | Token::AbreColchete = self.espiadinha() {
+                if let Token::Igual | Token::PontoVirgula | Token::AbreColchete = self.espiadinha()
+                {
                     break;
                 }
             }
@@ -629,4 +624,3 @@ impl Parser {
         Stmt::Expressao(expr)
     }
 }
-
