@@ -174,6 +174,7 @@ impl Lexer {
             '{' => Token::AbreChave,
             '}' => Token::FechaChave,
             '.' => Token::Ponto,
+            ',' => Token::Virgula,
 
             // caractere entre aspas simples
             '\'' => {
