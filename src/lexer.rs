@@ -190,185 +190,185 @@ impl Lexer {
     }
     // obtém o próximo token da fonte
     pub fn prox_token(&mut self) -> Token {
-        // pula espaços em branco
-        while self.caractere_atual.is_whitespace() && self.caractere_atual != '\n' {
-            self.avancar();
-        }
-
-        // determina o tipo de token com base no caractere atual
-        let token = match self.caractere_atual {
-            '\n' => Token::QuebraLinha,
-            // símbolos de pontuação
-            ';' => Token::PontoVirgula,
-            '(' => Token::AbreParentesis,
-            ')' => Token::FechaParentesis,
-            '[' => Token::AbreColchete,
-            ']' => Token::FechaColchete,
-            '{' => Token::AbreChave,
-            '}' => Token::FechaChave,
-            '.' => Token::Ponto,
-            ',' => Token::Virgula,
-
-            // caractere entre aspas simples
-            '\'' => {
-                let conteudo_char = self.ler_char();
-                Token::ConteudoChar(conteudo_char)
+        loop {
+            // pula espaços em branco
+            while self.caractere_atual.is_whitespace() && self.caractere_atual != '\n' {
+                self.avancar();
             }
 
-            // string entre aspas duplas
-            '"' => {
-                let texto = self.ler_texto();
-                Token::Texto(texto)
-            }
+            // determina o tipo de token com base no caractere atual
+            let token = match self.caractere_atual {
+                '\n' => Token::QuebraLinha,
+                // símbolos de pontuação
+                ';' => Token::PontoVirgula,
+                '(' => Token::AbreParentesis,
+                ')' => Token::FechaParentesis,
+                '[' => Token::AbreColchete,
+                ']' => Token::FechaColchete,
+                '{' => Token::AbreChave,
+                '}' => Token::FechaChave,
+                '.' => Token::Ponto,
+                ',' => Token::Virgula,
 
-            '#' => {
-                return self.ler_diretiva_pre_processador();
-            }
-
-            // operadores e símbolos
-            '=' => {
-                if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::Comparar
-                } else {
-                    Token::Igual
+                // caractere entre aspas simples
+                '\'' => {
+                    let conteudo_char = self.ler_char();
+                    Token::ConteudoChar(conteudo_char)
                 }
-            }
 
-            '+' => {
-                if self.espiadinha() == '+' {
-                    self.avancar();
-                    Token::Incremento
-                } else if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::SomaIgual
-                } else {
-                    Token::Mais
+                // string entre aspas duplas
+                '"' => {
+                    let texto = self.ler_texto();
+                    Token::Texto(texto)
                 }
-            }
 
-            '-' => {
-                if self.espiadinha() == '-' {
-                    self.avancar();
-                    Token::Decremento
-                } else if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::SubtracaoIgual
-                } else {
-                    Token::Menos
+                '#' => {
+                    return self.ler_diretiva_pre_processador();
                 }
-            }
 
-            '*' => {
-                if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::MultiplicacaoIgual
-                } else {
-                    Token::Asterisco
-                }
-            }
-            '/' => {
-                if self.espiadinha() == '/' {
-                    // comentário de linha
-                    while self.caractere_atual != '\n' && self.caractere_atual != '\0' {
+                // operadores e símbolos
+                '=' => {
+                    if self.espiadinha() == '=' {
                         self.avancar();
+                        Token::Comparar
+                    } else {
+                        Token::Igual
                     }
-                    return self.prox_token(); // chama recursivamente para obter o próximo token após o comentário
-                } else if self.espiadinha() == '*' {
-                    // comentário de bloco
-                    self.avancar(); // avança para o '*'
-                    self.avancar(); // avança para o próximo caractere após '*'
-                    while !(self.caractere_atual == '*' && self.espiadinha() == '/')
-                        && self.caractere_atual != '\0'
-                    {
+                }
+
+                '+' => {
+                    if self.espiadinha() == '+' {
                         self.avancar();
+                        Token::Incremento
+                    } else if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::SomaIgual
+                    } else {
+                        Token::Mais
                     }
-                    if self.caractere_atual == '*' && self.espiadinha() == '/' {
+                }
+
+                '-' => {
+                    if self.espiadinha() == '-' {
+                        self.avancar();
+                        Token::Decremento
+                    } else if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::SubtracaoIgual
+                    } else {
+                        Token::Menos
+                    }
+                }
+
+                '*' => {
+                    if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::MultiplicacaoIgual
+                    } else {
+                        Token::Asterisco
+                    }
+                }
+                '/' => {
+                    if self.espiadinha() == '/' {
+                        // comentário de linha
+                        while self.caractere_atual != '\n' && self.caractere_atual != '\0' {
+                            self.avancar();
+                        }
+                        continue;
+                    } else if self.espiadinha() == '*' {
+                        // comentário de bloco
                         self.avancar(); // avança para o '*'
-                        self.avancar(); // avança para o '/'
+                        self.avancar(); // avança para o próximo caractere após '*'
+                        while !(self.caractere_atual == '*' && self.espiadinha() == '/')
+                            && self.caractere_atual != '\0'
+                        {
+                            self.avancar();
+                        }
+                        if self.caractere_atual == '*' && self.espiadinha() == '/' {
+                            self.avancar(); // avança para o '*'
+                            self.avancar(); // avança para o '/'
+                        }
+                        continue;
+                    } else if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::DivisaoIgual
+                    } else {
+                        Token::Divisao
                     }
-                    return self.prox_token(); // chama recursivamente para obter o próximo token após o comentário
-                } else if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::DivisaoIgual
-                } else {
-                    Token::Divisao
                 }
-            }
 
-            '%' => {
-                if self.espiadinha() == '=' {
-                    Token::ModuloIgual
-                } else {
-                    Token::Modulo
+                '%' => {
+                    if self.espiadinha() == '=' {
+                        Token::ModuloIgual
+                    } else {
+                        Token::Modulo
+                    }
                 }
-            }
-            '&' => {
-                if self.espiadinha() == '&' {
-                    self.avancar();
-                    Token::EComercialDuplo
-                } else {
-                    Token::EComercial
+                '&' => {
+                    if self.espiadinha() == '&' {
+                        self.avancar();
+                        Token::EComercialDuplo
+                    } else {
+                        Token::EComercial
+                    }
                 }
-            }
 
-            '|' => {
-                if self.espiadinha() == '|' {
-                    self.avancar();
-                    Token::BarraVerticalDupla
-                } else {
-                    Token::BarraVertical
+                '|' => {
+                    if self.espiadinha() == '|' {
+                        self.avancar();
+                        Token::BarraVerticalDupla
+                    } else {
+                        Token::BarraVertical
+                    }
                 }
-            }
 
-            // operadores de comparação
-            '>' => {
-                if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::MaiorOuIgual
-                } else {
-                    Token::Maior
+                // operadores de comparação
+                '>' => {
+                    if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::MaiorOuIgual
+                    } else {
+                        Token::Maior
+                    }
                 }
-            }
-            '<' => {
-                if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::MenorOuIgual
-                } else {
-                    Token::Menor
+                '<' => {
+                    if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::MenorOuIgual
+                    } else {
+                        Token::Menor
+                    }
                 }
-            }
 
-            '!' => {
-                if self.espiadinha() == '=' {
-                    self.avancar();
-                    Token::Diferente
-                } else {
-                    Token::Negacao
+                '!' => {
+                    if self.espiadinha() == '=' {
+                        self.avancar();
+                        Token::Diferente
+                    } else {
+                        Token::Negacao
+                    }
                 }
-            }
 
-            // números (inteiros e ponto flutuante)
-            '0'..='9' => {
-                return self.ler_numero()
-            }
+                // números (inteiros e ponto flutuante)
+                '0'..='9' => return self.ler_numero(),
 
-            '\0' => Token::Fundo,
+                '\0' => Token::Fundo,
 
-            // identificadores (nomes de variáveis, funções, etc.)
-            _ => {
-                if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
-                    let identificador = self.ler_identificador(); // lê o identificador
+                // identificadores (nomes de variáveis, funções, etc.)
+                _ => {
+                    if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
+                        let identificador = self.ler_identificador(); // lê o identificador
 
-                    return Token::Identificador(identificador); // retorna o token de identificador
-                } else {
-                    Token::Burro // caractere desconhecido
+                        return Token::Identificador(identificador); // retorna o token de identificador
+                    } else {
+                        Token::Burro // caractere desconhecido
+                    }
                 }
-            }
-        };
+            };
 
-        self.avancar(); // avança para o próximo caractere após reconhecer o token
+            self.avancar(); // avança para o próximo caractere após reconhecer o token
 
-        token
+            return token;
+        }
     }
 }
