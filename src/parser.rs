@@ -33,6 +33,12 @@ pub enum Expr {
         valor: Box<Expr>,
     },
 
+    AtribuicaoComposta {
+        nome: Token,
+        operador: Token,
+        valor: Box<Expr>,
+    },
+
     Unario {
         operador: Token,
         direita: Box<Expr>,
@@ -261,6 +267,21 @@ impl Parser {
                 };
             } else {
                 panic!("Erro de Sintaxe: Alvo inválido para atribuição.");
+            }
+        } else if let Token::Soma | Token::Subtracao = self.token_atual.clone() {
+            let operador = self.token_atual.clone();
+            self.avancar();
+            let valor = self.parse_atribuicao();
+            
+
+            if let Expr::Variavel(var_nome) = expr_esquerda {
+                return Expr::AtribuicaoComposta {
+                    nome: var_nome,
+                    operador: operador,
+                    valor: Box::new(valor),
+                };
+            } else {
+                panic!("Erro de Sintaxe: Alvo inválido para atribuição composta.");
             }
         }
 
