@@ -37,6 +37,9 @@ pub enum Expr {
         operador: Token,
         direita: Box<Expr>,
     },
+
+    CharLiteral(String),
+    StringLiteral(String),
 }
 
 pub enum Stmt {
@@ -136,6 +139,14 @@ impl Parser {
                 let valor = valor_string.parse::<f64>().unwrap();
                 self.avancar();
                 Expr::Numero(valor)
+            }
+            Token::ConteudoChar(valor_char) => {                
+                self.avancar();
+                Expr::CharLiteral(valor_char)
+            }
+            Token::Texto(valor_string) => {
+                self.avancar();
+                Expr::StringLiteral(valor_string)
             }
             Token::AbreParentesis => {
                 self.avancar();
