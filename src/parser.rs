@@ -4,8 +4,8 @@ use crate::token::Token;
 
 #[derive(Clone)]
 pub struct Parametro {
-    tipo: Vec<Token>,
-    nome: Token,
+    pub tipo: Vec<Token>,
+    pub nome: Token,
 }
 
 pub enum Operador {
@@ -91,6 +91,7 @@ pub enum Stmt {
     DeclaracaoFuncao {
         tipo_retorno: Vec<Token>,
         nome: Token,
+        parametros:Vec<Parametro>,
         corpo: Box<Stmt>,
     },
 
@@ -554,8 +555,53 @@ impl Parser {
         }
         self.avancar();
 
-        while self.token_atual != Token::FechaParentesis && self.token_atual != Token::Fundo {
-            self.avancar();
+        // --- INÍCIO DA NOVA LÓGICA DE PARÂMETROS ---
+        let mut parametros: Vec<Parametro> = Vec::new();
+
+        // Verifica se a lista não está vazia
+        if self.token_atual != Token::FechaParentesis {
+            // Loop principal de análise de parâmetros
+            loop {
+                // 1. Analisa o tipo do parâmetro (ex: 'const char', 'int', 'float*')
+                let mut tipo_param: Vec<Token> = Vec::new();
+                while self.token_atual != Token::Fundo {
+                    // Se o próximo token for ',' ou ')', o token ATUAL é o nome.
+                    if let Token::Identificador(_) = self.token_atual {
+                        if let Token::Virgula | Token::FechaParentesis = self.espiadinha() {
+                            break;
+                        }
+                    }
+                    tipo_param.push(self.token_atual.clone());
+                    self.avancar();
+                }
+
+                // 2. Analisa o nome do parâmetro
+                if !matches!(self.token_atual, Token::Identificador(_)) {
+                    panic!("Esperado nome do parâmetro na declaração da função.");
+                }
+                let nome_param = self.token_atual.clone();
+                self.avancar();
+
+                // (Opcional: Adicionar suporte para `int arr[]` se necessário)
+
+                // Adiciona o parâmetro à lista
+                parametros.push(Parametro {
+                    tipo: tipo_param,
+                    nome: nome_param,
+                });
+
+                // 3. Verifica o que vem a seguir
+                if self.token_atual == Token::Virgula {
+                    self.avancar(); // Consome a vírgula e continua o loop
+                    continue;
+                }
+
+                if self.token_atual == Token::FechaParentesis {
+                    break; // Fim da lista de parâmetros
+                } else {
+                    panic!("Esperado ',' ou ')' após parâmetro de função.");
+                }
+            }
         }
 
         if self.token_atual != Token::FechaParentesis {
@@ -572,6 +618,7 @@ impl Parser {
         Stmt::DeclaracaoFuncao {
             tipo_retorno,
             nome,
+            parametros,
             corpo: Box::new(corpo),
         }
     }
