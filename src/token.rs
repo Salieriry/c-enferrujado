@@ -39,7 +39,7 @@ pub enum Token {
 
     Numero(String),
     Texto(String),
-    ConteudoChar(String),
+    ConteudoChar(char),
     Identificador(String),
 
     InclusaoGlobal(String),  // para <iostream.h>, por exemplo
