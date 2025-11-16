@@ -66,7 +66,7 @@ pub enum Expr {
         indice: Box<Expr>,
     },
 
-    CharLiteral(String),
+    CharLiteral(char),
     StringLiteral(String),
 }
 
