@@ -41,12 +41,12 @@ pub enum Expr {
     Variavel(Token),
 
     Atribuicao {
-        nome: Token,
+        alvo: Box<Expr>,
         valor: Box<Expr>,
     },
 
     AtribuicaoComposta {
-        nome: Token,
+        alvo: Box<Expr>,
         operador: Token,
         valor: Box<Expr>,
     },
@@ -64,12 +64,6 @@ pub enum Expr {
     AcessoArray {
         nome: Box<Expr>,
         indice: Box<Expr>,
-    },
-
-    AtribuicaoArray {
-        nome: Box<Expr>,
-        indice: Box<Expr>,
-        valor: Box<Expr>,
     },
 
     CharLiteral(String),
@@ -320,6 +314,24 @@ impl Parser {
         expr
     }
 
+    pub fn parse_bitwise_or(&mut self) -> Expr {
+        let mut expr = self.parse_bitwise_and();
+
+        while let Token::BarraVertical = &self.token_atual {
+            let operador = Operador::BarraVertical;
+            self.avancar();
+            
+            let direita = self.parse_bitwise_and(); 
+            
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+        expr
+    }
+
     pub fn parse_logical_and(&mut self) -> Expr {
         let mut expr = self.parse_bitwise_and();
 
@@ -392,16 +404,10 @@ impl Parser {
             let valor = self.parse_atribuicao();
 
             match expr_esquerda {
-                Expr::Variavel(var_nome) => {
+                // Permite Var, AcessoArray, ou Unario (*ptr) como alvo
+                Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
                     return Expr::Atribuicao {
-                        nome: var_nome,
-                        valor: Box::new(valor),
-                    };
-                }
-                Expr::AcessoArray { nome, indice } => {
-                    return Expr::AtribuicaoArray {
-                        nome,
-                        indice,
+                        alvo: Box::new(expr_esquerda),
                         valor: Box::new(valor),
                     };
                 }
@@ -417,14 +423,16 @@ impl Parser {
             self.avancar();
             let valor = self.parse_atribuicao();
 
-            if let Expr::Variavel(var_nome) = expr_esquerda {
-                return Expr::AtribuicaoComposta {
-                    nome: var_nome,
-                    operador: operador,
-                    valor: Box::new(valor),
-                };
-            } else {
-                panic!("Erro de Sintaxe: Alvo inválido para atribuição composta.");
+            match expr_esquerda {
+                // Permite os mesmos alvos para atribuição composta
+                Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
+                    return Expr::AtribuicaoComposta {
+                        alvo: Box::new(expr_esquerda),
+                        operador: operador,
+                        valor: Box::new(valor),
+                    };
+                }
+                _ => panic!("Erro de Sintaxe: Alvo inválido para atribuição composta."),
             }
         }
 
