@@ -161,6 +161,18 @@ impl Parser {
                 }
             }
 
+            Token::Identificador(nome) if nome == "return" => {
+                let operador = self.token_atual.clone();
+                self.avancar();
+
+                let direita = self.parse_atribuicao();
+
+                Expr::Unario {
+                    operador,
+                    direita: Box::new(direita),
+                }
+            }
+
             Token::Numero(valor_string) => {
                 let valor = valor_string.parse::<f64>().unwrap();
                 self.avancar();
