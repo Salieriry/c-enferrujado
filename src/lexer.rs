@@ -208,7 +208,7 @@ impl Lexer {
                     Token::Incremento
                 } else if self.espiadinha() == '=' {
                     self.avancar();
-                    Token::Soma
+                    Token::SomaIgual
                 } else {
                     Token::Mais
                 }
@@ -220,14 +220,20 @@ impl Lexer {
                     Token::Decremento
                 } else if self.espiadinha() == '=' {
                     self.avancar();
-                    Token::Subtracao
+                    Token::SubtracaoIgual
                 } else {
                     Token::Menos
                 }
             }
 
-            '*' => Token::Asterisco,
-
+            '*' => {
+                if self.espiadinha() == '=' {
+                    self.avancar();
+                    Token::MultiplicacaoIgual
+                } else {
+                    Token::Asterisco
+                }
+            }
             '/' => {
                 if self.espiadinha() == '/' {
                     // comentário de linha
@@ -249,20 +255,28 @@ impl Lexer {
                         self.avancar(); // avança para o '/'
                     }
                     return self.prox_token(); // chama recursivamente para obter o próximo token após o comentário
+                } else if self.espiadinha() == '=' {
+                    self.avancar();
+                    Token::DivisaoIgual
                 } else {
                     Token::Divisao
                 }
             }
 
-            '%' => Token::Modulo,
-
+            '%' => {
+                if self.espiadinha() == '=' {
+                    Token::ModuloIgual
+                } else {
+                    Token::Modulo
+                }
+            }
             '&' => {
                 if self.espiadinha() == '&' {
                     self.avancar();
                     Token::EComercialDuplo
                 } else {
                     Token::EComercial
-                }                
+                }
             }
 
             '|' => {
@@ -272,8 +286,8 @@ impl Lexer {
                 } else {
                     Token::BarraVertical
                 }
-            } 
-            
+            }
+
             // operadores de comparação
             '>' => {
                 if self.espiadinha() == '=' {
