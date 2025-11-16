@@ -51,6 +51,11 @@ pub enum Expr {
         operador: Token,
     },
 
+    AcessoArray {
+        nome:Box<Expr>,
+        indice: Box<Expr>,
+    },
+
     CharLiteral(String),
     StringLiteral(String),
 }
@@ -61,6 +66,7 @@ pub enum Stmt {
     DeclaracaoVariavel {
         tipo: Vec<Token>,
         nome: Token,
+        tamanho_array: Option<Expr>,
         inicializador: Option<Expr>,
     },
     Inclusao {
@@ -201,6 +207,23 @@ impl Parser {
                         expressao: Box::new(expr),
                         operador: operador_posfixo,
                     };
+                }
+
+                Token::AbreColchete => {
+                    self.avancar();
+
+                    let indice = self.parse_atribuicao();
+
+                    if self.token_atual != Token::FechaColchete {
+                        panic!("Esperando ']' após o índice do array")
+                    }
+                    self.avancar();
+
+                    expr = Expr::AcessoArray {
+                        nome: Box::new(expr),
+                        indice: Box::new(indice),
+                    }
+
                 }
                 _ => break,
             }
@@ -545,10 +568,23 @@ impl Parser {
         let nome = self.token_atual.clone();
         self.avancar();
 
+        let tamanho_array: Option<Expr>;
+        if self.token_atual == Token::AbreColchete {
+            self.avancar();
+            tamanho_array = Some(self.parse_atribuicao());
+
+            if self.token_atual != Token::FechaColchete {
+                panic!("Esperado ']' após tamanho do array.");
+            }
+            self.avancar();
+        } else {
+            tamanho_array = None;
+        }
+
         let inicializador: Option<Expr>;
         if self.token_atual == Token::Igual {
             self.avancar();
-            inicializador = Some(self.parse_expressao());
+            inicializador = Some(self.parse_atribuicao());
         } else {
             inicializador = None;
         }
@@ -561,6 +597,7 @@ impl Parser {
         Stmt::DeclaracaoVariavel {
             tipo,
             nome,
+            tamanho_array,
             inicializador,
         }
     }
