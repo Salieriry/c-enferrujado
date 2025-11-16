@@ -344,7 +344,7 @@ impl Parser {
         while let Token::EComercialDuplo = &self.token_atual {
             let operador = Operador::EComercialDuplo;
             self.avancar();
-            let direita = self.parse_bitwise_and();
+            let direita = self.parse_bitwise_or();
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
                 operador,
