@@ -333,7 +333,7 @@ impl Parser {
     }
 
     pub fn parse_logical_and(&mut self) -> Expr {
-        let mut expr = self.parse_bitwise_and();
+        let mut expr = self.parse_bitwise_or();
 
         while let Token::EComercialDuplo = &self.token_atual {
             let operador = Operador::EComercialDuplo;
