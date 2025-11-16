@@ -14,6 +14,7 @@ pub enum Operador {
     MaiorOuIgual,
     MenorOuIgual,
     Diferente,
+    Modulo,
 
     EComercial,
 }
@@ -54,6 +55,12 @@ pub enum Expr {
     AcessoArray {
         nome:Box<Expr>,
         indice: Box<Expr>,
+    },
+
+    AtribuicaoArray {
+        nome: Box<Expr>,
+        indice: Box<Expr>,
+        valor: Box<Expr>,
     },
 
     CharLiteral(String),
@@ -233,14 +240,15 @@ impl Parser {
     pub fn parse_termo(&mut self) -> Expr {
         let mut expr = self.parse_fator();
 
-        while let Token::Asterisco | Token::Divisao = self.token_atual {
+        while let Token::Asterisco | Token::Divisao | Token::Modulo = self.token_atual {
             let operador = match self.token_atual.clone() {
                 Token::Asterisco => Operador::Asterisco,
                 Token::Divisao => Operador::Divisao,
+                Token::Modulo => Operador::Modulo,
                 _ => unreachable!(),
             };
             self.avancar();
-            let direita = self.parse_primario();
+            let direita = self.parse_fator();
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
                 operador,
@@ -332,13 +340,21 @@ impl Parser {
             self.avancar();
             let valor = self.parse_atribuicao();
 
-            if let Expr::Variavel(var_nome) = expr_esquerda {
-                return Expr::Atribuicao {
-                    nome: var_nome,
-                    valor: Box::new(valor),
-                };
-            } else {
-                panic!("Erro de Sintaxe: Alvo inválido para atribuição.");
+            match expr_esquerda {
+                Expr::Variavel(var_nome) => {
+                    return Expr::Atribuicao {
+                        nome: var_nome,
+                        valor: Box::new(valor),
+                    };
+                }
+                Expr::AcessoArray { nome, indice } => {
+                    return Expr::AtribuicaoArray {
+                        nome,
+                        indice,
+                        valor: Box::new(valor),
+                    };
+                }
+                _ => panic!("Erro de Sintaxe: Alvo inválido para atribuição."),
             }
         } else if let Token::Soma | Token::Subtracao = self.token_atual.clone() {
             let operador = self.token_atual.clone();
