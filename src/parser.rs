@@ -7,6 +7,13 @@ pub enum Operador {
     Menos,
     Asterisco,
     Divisao,
+
+    Comparar,
+    Maior,
+    Menor,
+    MaiorOuIgual,
+    MenorOuIgual,
+    Diferente,
 }
 
 pub enum Expr {
@@ -102,7 +109,7 @@ impl Parser {
             }
             Token::AbreParentesis => {
                 self.avancar();
-                let expr = self.parse_expressao();
+                let expr = self.parse_atribuicao();
                 if let Token::FechaParentesis = self.token_atual {
                     self.avancar();
                 } else {
@@ -159,8 +166,34 @@ impl Parser {
         expr
     }
 
+    pub fn parse_comparacao(&mut self) -> Expr {
+        let mut expr = self.parse_expressao();
+
+        while let Token::Maior | Token::Menor | Token::MaiorOuIgual | Token::MenorOuIgual | Token::Comparar | Token::Diferente = self.token_atual {
+            let operador = match self.token_atual.clone() {
+                Token::Maior => Operador::Comparar,
+                Token::Menor => Operador::Menor,
+                Token::MaiorOuIgual => Operador::MaiorOuIgual,
+                Token::MenorOuIgual => Operador::MenorOuIgual,
+                Token::Comparar => Operador::Comparar,
+                Token::Diferente => Operador::Diferente,
+                _ => unreachable!(),
+            };
+            self.avancar();
+
+            let direita = self.parse_expressao();
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+                operador,
+                direita: Box::new(direita),
+            };
+        }
+
+        expr
+    }
+
     pub fn parse_atribuicao(&mut self) -> Expr {
-        let expr_esquerda = self.parse_expressao();
+        let expr_esquerda = self.parse_comparacao();
 
         if self.token_atual == Token::Igual {
             self.avancar();
@@ -177,20 +210,6 @@ impl Parser {
         }
 
         expr_esquerda
-    }
-
-    pub fn parse(&mut self) -> Vec<Stmt> {
-        let mut declaracoes: Vec<Stmt> = Vec::new();
-
-        while self.token_atual != Token::Fundo {
-            if self.token_atual == Token::QuebraLinha {
-                self.avancar();
-                continue;
-            }
-            declaracoes.push(self.parse_declaracao());
-        }
-
-        declaracoes
     }
 
     pub fn parse_declaracao(&mut self) -> Stmt {
@@ -211,6 +230,22 @@ impl Parser {
             _ => self.parse_declaracao_expressao(),
         }
     }
+
+    pub fn parse(&mut self) -> Vec<Stmt> {
+        let mut declaracoes: Vec<Stmt> = Vec::new();
+
+        while self.token_atual != Token::Fundo {
+            if self.token_atual == Token::QuebraLinha {
+                self.avancar();
+                continue;
+            }
+            declaracoes.push(self.parse_declaracao());
+        }
+
+        declaracoes
+    }
+
+    
 
     pub fn parse_diretiva_inclusao(&mut self) -> Stmt {
         let token_clonado = self.token_atual.clone();
