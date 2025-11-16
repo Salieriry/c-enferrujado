@@ -57,6 +57,16 @@ pub enum Stmt {
         tipo_retorno: Vec<Token>,
         nome: Token,
     },
+
+    If {
+        condicao: Expr,
+        bloco_then: Box<Stmt>,
+        bloco_else: Option<Box<Stmt>>,
+    },
+
+    Bloco {
+        declaracoes: Vec<Stmt>,
+    }
 }
 
 pub struct Parser {
@@ -145,7 +155,6 @@ impl Parser {
                 if self.token_atual == Token::Burro {
                     panic!("Erro de Sintaxe: Caractere ilegal encontrado pelo lexer.");
                 } else {
-                    // Senão, reporte o erro de parsing esperado
                     panic!(
                         "Erro de Sintaxe: Fator inesperado. Esperado num, '(', var ou op. unário"
                     );
@@ -250,6 +259,10 @@ impl Parser {
         match &self.token_atual {
             Token::InclusaoGlobal(_) | Token::InclusaoLocal(_) => self.parse_diretiva_inclusao(),
             Token::Diretiva(_) => self.parse_diretiva_outra(),
+            Token::Identificador(nome) if nome == "if" => {
+                return self.parse_declaracao_if();
+            }
+
             Token::Identificador(_) => {
                 if let Token::Identificador(_) = self.espiadinha() {
                     if let Token::AbreParentesis = self.espiar_dois_passos() {
@@ -295,6 +308,75 @@ impl Parser {
             },
             _ => unreachable!(),
         }
+    }
+
+    pub fn parse_declaracao_if(&mut self) -> Stmt {
+        self.avancar(); 
+
+        if self.token_atual != Token::AbreParentesis {
+            panic!("Esperado '(' após 'if'");
+        }
+        self.avancar(); 
+
+        let condicao = self.parse_atribuicao();
+
+        if self.token_atual != Token::FechaParentesis {
+            panic!("Esperado ')' após condição do 'if'");
+        }
+        self.avancar();
+
+        let bloco_then = self.parse_bloco();
+
+        let mut bloco_else: Option<Box<Stmt>> = None;
+
+        if let Token::Identificador(nome) = &self.token_atual.clone() {
+            if nome == "else" {
+                self.avancar();
+
+                if let Token::Identificador(nome) = &self.token_atual.clone() {
+                    if nome == "if" {
+                        bloco_else = Some(Box::new(self.parse_declaracao_if()));
+                    } else {
+                        bloco_else = Some(Box::new(self.parse_bloco()));
+                    }
+
+                } else {
+                    bloco_else = Some(Box::new(self.parse_bloco()));
+                }
+                
+            }
+        }
+
+        Stmt::If {
+            condicao,
+            bloco_then: Box::new(bloco_then),
+            bloco_else,
+        }
+    }
+
+    pub fn parse_bloco(&mut self) -> Stmt {
+        if self.token_atual != Token::AbreChave {
+            panic!("Esperado '{{' para iniciar o bloco");
+        }
+        self.avancar();
+
+        let mut declaracoes: Vec<Stmt> = Vec::new();
+
+        while self.token_atual != Token::FechaChave && self.token_atual != Token::Fundo {
+            if self.token_atual == Token::QuebraLinha {
+                self.avancar();
+                continue;
+            }
+
+            declaracoes.push(self.parse_declaracao());
+        }
+
+        if self.token_atual != Token::FechaChave {
+            panic!("Esperado '}}' para fechar o bloco");
+        }
+        self.avancar();
+
+        Stmt::Bloco { declaracoes}
     }
 
     pub fn parse_diretiva_outra(&mut self) -> Stmt {
