@@ -2,14 +2,14 @@ use core::panic;
 
 use crate::token::Token;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Parametro {
     pub tipo: Vec<Token>,
     pub nome: Token,
     pub tamanho_array: Option<Expr>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Operador {
     Mais,
     Menos,
@@ -30,7 +30,7 @@ pub enum Operador {
     BarraVerticalDupla,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Expr {
     NumeroInt(i64),
     NumeroFloat(f64),
@@ -74,7 +74,7 @@ pub enum Expr {
     StringLiteral(String),
     ArrayDim,
 }
-
+#[derive(Debug)]
 pub enum Stmt {
     Expressao(Expr),
 
@@ -160,7 +160,8 @@ impl Parser {
             | Token::Decremento
             | Token::Incremento
             | Token::Negacao
-            | Token::EComercial => {
+            | Token::EComercial
+            | Token::Asterisco => {
                 let operador = self.token_atual.clone();
                 self.avancar();
                 let direita = self.parse_primario();
@@ -188,7 +189,7 @@ impl Parser {
                 if let Token::FechaParentesis = self.token_atual {
                     self.avancar();
                 } else {
-                    panic!("Esperado ')'");
+                    panic!("Esperado ')', mas foi recebido {:?}", self.token_atual);
                 }
                 return Expr::Agrupamento(Box::new(expr));
             }
@@ -209,10 +210,14 @@ impl Parser {
             Token::Identificador(_) => Expr::Variavel(self.token_atual.clone()),
             _ => {
                 if self.token_atual == Token::Burro {
-                    panic!("Erro de Léxico: Caractere ilegal encontrado pelo lexer.");
+                    panic!(
+                        "Erro de Léxico: Caractere ilegal encontrado pelo lexer. Token: {:?}",
+                        self.token_atual
+                    );
                 } else {
                     panic!(
-                        "Erro de Sintaxe: Fator inesperado. Esperado num, '(', var ou op. unário"
+                        "Erro de Sintaxe: Fator inesperado. Esperado num, '(', var ou op. unário, mas foi recebido {:?}",
+                        self.token_atual
                     );
                 }
             }
@@ -244,7 +249,10 @@ impl Parser {
                     let indice = self.parse_atribuicao();
 
                     if self.token_atual != Token::FechaColchete {
-                        panic!("Esperando ']' após o índice do array")
+                        panic!(
+                            "Esperando ']' após o índice do array, mas foi recebido {:?}",
+                            self.token_atual
+                        )
                     }
                     self.avancar();
 
@@ -416,7 +424,10 @@ impl Parser {
                         valor: Box::new(valor),
                     };
                 }
-                _ => panic!("Erro de Sintaxe: Alvo inválido para atribuição."),
+                _ => panic!(
+                    "Erro de Sintaxe: Alvo inválido para atribuição. A expressão da esquerda é: {:?}",
+                    expr_esquerda
+                ),
             }
         } else if let Token::SomaIgual
         | Token::SubtracaoIgual
@@ -436,7 +447,10 @@ impl Parser {
                         valor: Box::new(valor),
                     };
                 }
-                _ => panic!("Erro de Sintaxe: Alvo inválido para atribuição composta."),
+                _ => panic!(
+                    "Erro de Sintaxe: Alvo inválido para atribuição composta. A expressão da esquerda é: {:?}",
+                    expr_esquerda
+                ),
             }
         }
 
@@ -504,14 +518,20 @@ impl Parser {
         self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
-            panic!("Esperado '(' após 'if'");
+            panic!(
+                "Esperado '(' após 'if', mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
         let condicao = self.parse_atribuicao();
 
         if self.token_atual != Token::FechaParentesis {
-            panic!("Esperado ')' após condição do 'if'");
+            panic!(
+                "Esperado ')' após condição do 'if', mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -544,7 +564,10 @@ impl Parser {
 
     pub fn parse_bloco(&mut self) -> Stmt {
         if self.token_atual != Token::AbreChave {
-            panic!("Esperado '{{' para iniciar o bloco");
+            panic!(
+                "Esperado '{{' para iniciar o bloco, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -560,7 +583,10 @@ impl Parser {
         }
 
         if self.token_atual != Token::FechaChave {
-            panic!("Esperado '}}' para fechar o bloco");
+            panic!(
+                "Esperado '}}' para fechar o bloco, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -597,13 +623,19 @@ impl Parser {
         }
 
         if !matches!(self.token_atual, Token::Identificador(_)) {
-            panic!("Esperado nome da função após o tipo de retorno.");
+            panic!(
+                "Esperado nome da função após o tipo de retorno, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         let nome = self.token_atual.clone();
         self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
-            panic!("Esperado '(' após o nome da função.");
+            panic!(
+                "Esperado '(' após o nome da função, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -615,7 +647,9 @@ impl Parser {
                 let mut tamanho_array: Option<Expr> = None;
                 while self.token_atual != Token::Fundo {
                     if let Token::Identificador(_) = self.token_atual {
-                        if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete = self.espiadinha() {
+                        if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete =
+                            self.espiadinha()
+                        {
                             break;
                         }
                     }
@@ -624,7 +658,10 @@ impl Parser {
                 }
 
                 if !matches!(self.token_atual, Token::Identificador(_)) {
-                    panic!("Esperado nome do parâmetro na declaração da função.");
+                    panic!(
+                        "Esperado nome do parâmetro na declaração da função, mas foi recebido {:?}",
+                        self.token_atual
+                    );
                 }
                 let nome_param = self.token_atual.clone();
                 self.avancar();
@@ -639,7 +676,10 @@ impl Parser {
                     }
 
                     if self.token_atual != Token::FechaColchete {
-                         panic!("Esperado ']' em parâmetro de array.");
+                        panic!(
+                            "Esperado ']' em parâmetro de array, mas foi recebido {:?}",
+                            self.token_atual
+                        );
                     }
                     self.avancar();
                 }
@@ -658,13 +698,19 @@ impl Parser {
                 if self.token_atual == Token::FechaParentesis {
                     break;
                 } else {
-                    panic!("Esperado ',' ou ')' após parâmetro de função.");
+                    panic!(
+                        "Esperado ',' ou ')' após parâmetro de função, mas foi recebido {:?}",
+                        self.token_atual
+                    );
                 }
             }
         }
 
         if self.token_atual != Token::FechaParentesis {
-            panic!("Esperado ')' após os parâmetros da função.");
+            panic!(
+                "Esperado ')' após os parâmetros da função, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -697,7 +743,10 @@ impl Parser {
         }
 
         if !matches!(self.token_atual, Token::Identificador(_)) {
-            panic!("Esperado nome de variável após o tipo.");
+            panic!(
+                "Esperado nome de variável após o tipo, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
 
         let nome = self.token_atual.clone();
@@ -706,10 +755,18 @@ impl Parser {
         let tamanho_array: Option<Expr>;
         if self.token_atual == Token::AbreColchete {
             self.avancar();
-            tamanho_array = Some(self.parse_atribuicao());
+
+            if self.token_atual == Token::FechaColchete {
+                tamanho_array = Some(Expr::ArrayDim);
+            } else {
+                tamanho_array = Some(self.parse_atribuicao());
+            }
 
             if self.token_atual != Token::FechaColchete {
-                panic!("Esperado ']' após tamanho do array.");
+                panic!(
+                    "Esperado ']' após tamanho do array, mas foi recebido {:?}",
+                    self.token_atual
+                );
             }
             self.avancar();
         } else {
@@ -725,7 +782,10 @@ impl Parser {
         }
 
         if self.token_atual != Token::PontoVirgula {
-            panic!("Esperado ';' após declaração de variável.");
+            panic!(
+                "Esperado ';' após declaração de variável, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
@@ -741,7 +801,10 @@ impl Parser {
         let expr = self.parse_atribuicao();
 
         if self.token_atual != Token::PontoVirgula {
-            panic!("Esperado ';' após expressão.");
+            panic!(
+                "Esperado ';' após expressão, mas foi recebido {:?}",
+                self.token_atual
+            );
         }
         self.avancar();
 
