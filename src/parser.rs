@@ -2,6 +2,12 @@ use core::panic;
 
 use crate::token::Token;
 
+#[derive(Clone)]
+pub struct Parametro {
+    tipo: Vec<Token>,
+    nome: Token,
+}
+
 pub enum Operador {
     Mais,
     Menos,

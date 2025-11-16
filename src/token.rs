@@ -12,6 +12,7 @@ pub enum Token {
     FechaChave,
     AbreColchete,
     FechaColchete,
+    Virgula,
 
     Incremento,
     Decremento,
