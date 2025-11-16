@@ -16,8 +16,11 @@ pub enum Token {
 
     Incremento,
     Decremento,
-    Soma,
-    Subtracao,
+    SomaIgual,
+    SubtracaoIgual,
+    MultiplicacaoIgual,
+    DivisaoIgual,
+    ModuloIgual,
     Asterisco,
     Divisao,
     Modulo,
