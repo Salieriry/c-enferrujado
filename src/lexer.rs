@@ -81,17 +81,33 @@ impl Lexer {
     // lê uma string entre aspas
     pub fn ler_texto(&mut self) -> String {
         let posicao_inicial = self.posicao + 1;
+        let mut chars: Vec<char> = Vec::new();
 
         // lê até encontrar a próxima aspas ou o fim da fonte
         loop {
             self.avancar();
+
+            if self.caractere_atual == '\\' {
+                self.avancar();
+                match self.caractere_atual {
+                    'n' => chars.push('\n'),
+                    't' => chars.push('\t'),
+                    '"' => chars.push('"'),
+                    '\\' => chars.push('\\'),
+                    _ => chars.push(self.caractere_atual)
+                }
+                continue;
+            }
+
             if self.caractere_atual == '"' || self.caractere_atual == '\0' {
                 break;
             }
+
+            chars.push(self.caractere_atual)
         }
 
         // coleta os caracteres do texto e os converte em uma string, retornando o resultado
-        self.fonte[posicao_inicial..self.posicao].iter().collect()
+        return chars.iter().collect();
     }
 
     // lê um caractere entre aspas simples
