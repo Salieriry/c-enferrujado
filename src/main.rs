@@ -163,7 +163,7 @@ fn imprimir_stmt(stmt: &Stmt, indent: usize) {
             if let Some(expr) = expr_opt {
                 print!(" ");
                 // Chama a função que imprime/avalia a expressão
-                self.executar(expr)?;
+                imprimir_expr(expr, indent + 1);
             }
             println!(";");
         }
