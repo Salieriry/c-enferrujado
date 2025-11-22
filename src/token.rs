@@ -1,4 +1,6 @@
-#[derive(Clone, PartialEq, Debug)]
+use serde::Serialize;
+
+#[derive(Clone, PartialEq, Debug, Serialize)]
 pub enum Token {
     // enumeração dos tipos de tokens
     Mais,

@@ -1,15 +1,16 @@
 use core::panic;
 
 use crate::token::Token;
+use serde::Serialize;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Parametro {
     pub tipo: Vec<Token>,
     pub nome: Token,
     pub tamanho_array: Option<Expr>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Operador {
     Mais,
     Menos,
@@ -30,7 +31,7 @@ pub enum Operador {
     BarraVerticalDupla,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Expr {
     NumeroInt(i64),
     NumeroFloat(f64),
@@ -74,7 +75,7 @@ pub enum Expr {
     StringLiteral(String),
     ArrayDim,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Stmt {
     Expressao(Expr),
 
