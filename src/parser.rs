@@ -131,18 +131,11 @@ impl Parser {
     }
 
     pub fn avancar(&mut self) {
-        loop {
-            if self.posicao_atual + 1 < self.tokens.len() {
-                self.posicao_atual += 1;
-                self.token_atual = self.tokens[self.posicao_atual].clone();
-            } else {
-                self.token_atual = Token::Fundo;
-                break;
-            }
-
-            if self.token_atual != Token::QuebraLinha {
-                break;
-            }
+        if self.posicao_atual + 1 < self.tokens.len() {
+            self.posicao_atual += 1;
+            self.token_atual = self.tokens[self.posicao_atual].clone();
+        } else {
+            self.token_atual = Token::Fundo;
         }
     }
 
