@@ -45,13 +45,16 @@ pub enum Token {
     ConteudoChar(char),
     Identificador(String),
 
-    InclusaoGlobal(String),  // para <iostream.h>, por exemplo
-    InclusaoLocal(String),   // para "meu_arquivo.h", por exemplo
-    Diretiva(String),        // para outras diretivas, ex: #define
+    InclusaoGlobal(String), // para <iostream.h>, por exemplo
+    InclusaoLocal(String),  // para "meu_arquivo.h", por exemplo
+    Diretiva(String),       // para outras diretivas, ex: #define
 
     Ponto,
     QuebraLinha,
 
     Invalido,
     Fundo,
+
+    DeslocamentoEsq,
+    DeslocamentoDir,
 }

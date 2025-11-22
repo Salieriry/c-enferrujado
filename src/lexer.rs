@@ -328,6 +328,9 @@ impl Lexer {
                     if self.espiadinha() == '=' {
                         self.avancar();
                         Token::MaiorOuIgual
+                    } else if self.espiadinha() == '>' {
+                        self.avancar();
+                        Token::DeslocamentoDir
                     } else {
                         Token::Maior
                     }
@@ -336,6 +339,9 @@ impl Lexer {
                     if self.espiadinha() == '=' {
                         self.avancar();
                         Token::MenorOuIgual
+                    } else if self.espiadinha() == '<' {
+                        self.avancar();
+                        Token::DeslocamentoEsq
                     } else {
                         Token::Menor
                     }
