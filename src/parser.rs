@@ -1,43 +1,69 @@
 use core::panic;
 
 use crate::token::Token;
+
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
+
 pub struct Parametro {
     pub tipo: Vec<Token>,
+
     pub nome: Token,
+
     pub tamanho_array: Option<Expr>,
 }
 
 #[derive(Clone, Debug, Serialize)]
+
 pub enum Operador {
     Mais,
+
     Menos,
+
     Asterisco,
+
     Divisao,
 
     Comparar,
+
     Maior,
+
     Menor,
+
     MaiorOuIgual,
+
     MenorOuIgual,
+
     Diferente,
+
     Modulo,
 
     EComercial,
+
     EComercialDuplo,
+
     BarraVertical,
+
     BarraVerticalDupla,
+
+    DeslocamentoEsq,
+
+    DeslocamentoDir,
 }
 
 #[derive(Clone, Debug, Serialize)]
+
 pub enum Expr {
     NumeroInt(i64),
+
     NumeroFloat(f64),
+
     Binario {
         esquerda: Box<Expr>,
+
         operador: Operador,
+
         direita: Box<Expr>,
     },
 
@@ -47,71 +73,106 @@ pub enum Expr {
 
     Atribuicao {
         alvo: Box<Expr>,
+
         valor: Box<Expr>,
     },
 
     AtribuicaoComposta {
         alvo: Box<Expr>,
+
         operador: Token,
+
         valor: Box<Expr>,
     },
 
     Unario {
         operador: Token,
+
         direita: Box<Expr>,
     },
 
     Posfixa {
         expressao: Box<Expr>,
+
         operador: Token,
     },
 
     AcessoArray {
         nome: Box<Expr>,
+
         indice: Box<Expr>,
     },
 
+    ChamadaFuncao {
+        callee: Box<Expr>,
+
+        argumentos: Vec<Expr>,
+    },
+
     CharLiteral(char),
+
     StringLiteral(String),
+
     ArrayDim,
 }
+
 #[derive(Debug, Serialize)]
+
 pub enum Stmt {
     Expressao(Expr),
+
     Retorno(Option<Expr>),
+
     DeclaracaoVariavel {
         tipo: Vec<Token>,
+
         nome: Token,
+
         tamanho_array: Option<Expr>,
+
         inicializador: Option<Expr>,
     },
+
     Inclusao {
         path: String,
+
         is_global: bool,
     },
+
     Diretiva(String),
 
     DeclaracaoFuncao {
         tipo_retorno: Vec<Token>,
+
         nome: Token,
+
         parametros: Vec<Parametro>,
+
         corpo: Box<Stmt>,
     },
 
     If {
         condicao: Expr,
+
         bloco_then: Box<Stmt>,
+
         bloco_else: Option<Box<Stmt>>,
     },
 
     Bloco {
         declaracoes: Vec<Stmt>,
     },
+
+    Using {
+        namespace: String,
+    },
 }
 
 pub struct Parser {
     tokens: Vec<Token>,
+
     posicao_atual: usize,
+
     token_atual: Token,
 }
 
@@ -125,7 +186,9 @@ impl Parser {
 
         Self {
             tokens,
+
             posicao_atual: 0,
+
             token_atual,
         }
     }
@@ -133,6 +196,7 @@ impl Parser {
     pub fn avancar(&mut self) {
         if self.posicao_atual + 1 < self.tokens.len() {
             self.posicao_atual += 1;
+
             self.token_atual = self.tokens[self.posicao_atual].clone();
         } else {
             self.token_atual = Token::Fundo;
@@ -164,52 +228,108 @@ impl Parser {
             | Token::EComercial
             | Token::Asterisco => {
                 let operador = self.token_atual.clone();
+
                 self.avancar();
+
                 let direita = self.parse_primario();
+
                 return Expr::Unario {
                     operador,
+
                     direita: Box::new(direita),
                 };
             }
 
             Token::AbreParentesis => {
                 self.avancar();
+
                 let expr = self.parse_atribuicao();
+
                 if let Token::FechaParentesis = self.token_atual {
                     self.avancar();
                 } else {
                     panic!("Esperado ')', mas foi recebido {:?}", self.token_atual);
                 }
+
                 return Expr::Agrupamento(Box::new(expr));
             }
 
             _ => {}
         }
+
         let expr = match &self.token_atual {
             Token::NumeroInt(valor_string) => {
                 let valor = valor_string.parse::<i64>().unwrap();
+
                 Expr::NumeroInt(valor)
             }
+
             Token::NumeroFloat(valor_string) => {
                 let valor = valor_string.parse::<f64>().unwrap();
+
                 Expr::NumeroFloat(valor)
             }
+
             Token::ConteudoChar(valor_char) => Expr::CharLiteral(*valor_char),
+
             Token::Texto(valor_string) => Expr::StringLiteral(valor_string.to_string()),
-            Token::Identificador(_) => Expr::Variavel(self.token_atual.clone()),
-            _ => {
-                if self.token_atual == Token::Invalido {
-                    panic!(
-                        "Erro de Léxico: Caractere ilegal encontrado pelo lexer. Token: {:?}",
-                        self.token_atual
-                    );
+
+            Token::Identificador(_) => {
+                // Verifica se o próximo token é um '(', indicando uma função
+
+                if self.espiadinha() == Token::AbreParentesis {
+                    let nome = self.token_atual.clone();
+
+                    self.avancar(); // consome o nome (Identificador)
+
+                    // Agora token_atual é '(', vamos avançar para o primeiro argumento
+
+                    self.avancar();
+
+                    let mut argumentos = Vec::new();
+
+                    // Se não for logo um ')', temos argumentos para ler
+
+                    if self.token_atual != Token::FechaParentesis {
+                        loop {
+                            argumentos.push(self.parse_atribuicao());
+
+                            if self.token_atual == Token::Virgula {
+                                self.avancar(); // consome ',' e vai para o próximo argumento
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    // Verifica se fechou os parênteses
+
+                    if self.token_atual != Token::FechaParentesis {
+                        panic!(
+                            "Esperado ')' após argumentos, recebido {:?}",
+                            self.token_atual
+                        );
+                    }
+
+                    // CUIDADO: O parse_primario tem um self.avancar() logo abaixo deste match.
+
+                    // Como estamos parados no ')', ao retornar agora, o self.avancar() lá de baixo
+
+                    // vai consumir o ')' corretamente e deixar o parser pronto para o próximo token.
+
+                    Expr::ChamadaFuncao {
+                        callee: Box::new(Expr::Variavel(nome)),
+
+                        argumentos,
+                    }
                 } else {
-                    panic!(
-                        "Erro de Sintaxe: Fator inesperado. Esperado num, '(', var ou op. unário, mas foi recebido {:?}",
-                        self.token_atual
-                    );
+                    // Se não tem '(', é apenas uma variável simples
+
+                    Expr::Variavel(self.token_atual.clone())
                 }
             }
+
+            _ => panic!("Esperado primário, recebido {:?}", self.token_atual),
         };
 
         self.avancar();
@@ -224,10 +344,12 @@ impl Parser {
             match &self.token_atual {
                 Token::Incremento | Token::Decremento => {
                     let operador_posfixo = self.token_atual.clone();
+
                     self.avancar();
 
                     expr = Expr::Posfixa {
                         expressao: Box::new(expr),
+
                         operador: operador_posfixo,
                     };
                 }
@@ -243,36 +365,50 @@ impl Parser {
                             self.token_atual
                         )
                     }
+
                     self.avancar();
 
                     expr = Expr::AcessoArray {
                         nome: Box::new(expr),
+
                         indice: Box::new(indice),
                     }
                 }
+
                 _ => break,
             }
         }
+
         expr
     }
+
     pub fn parse_termo(&mut self) -> Expr {
         let mut expr = self.parse_fator();
 
         while let Token::Asterisco | Token::Divisao | Token::Modulo = &self.token_atual {
             let operador = match &self.token_atual {
                 Token::Asterisco => Operador::Asterisco,
+
                 Token::Divisao => Operador::Divisao,
+
                 Token::Modulo => Operador::Modulo,
+
                 _ => unreachable!(),
             };
+
             self.avancar();
+
             let direita = self.parse_fator();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
+
         expr
     }
 
@@ -282,17 +418,25 @@ impl Parser {
         while let Token::Mais | Token::Menos = &self.token_atual {
             let operador = match &self.token_atual {
                 Token::Mais => Operador::Mais,
+
                 Token::Menos => Operador::Menos,
+
                 _ => unreachable!(),
             };
+
             self.avancar();
+
             let direita = self.parse_termo();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
+
         expr
     }
 
@@ -302,14 +446,19 @@ impl Parser {
         while let Token::EComercial = &self.token_atual {
             let operador = match &self.token_atual {
                 Token::EComercial => Operador::EComercial,
+
                 _ => unreachable!(),
             };
+
             self.avancar();
 
             let direita = self.parse_comparacao();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
@@ -322,16 +471,20 @@ impl Parser {
 
         while let Token::BarraVertical = &self.token_atual {
             let operador = Operador::BarraVertical;
+
             self.avancar();
 
             let direita = self.parse_bitwise_and();
 
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
+
         expr
     }
 
@@ -340,14 +493,20 @@ impl Parser {
 
         while let Token::EComercialDuplo = &self.token_atual {
             let operador = Operador::EComercialDuplo;
+
             self.avancar();
+
             let direita = self.parse_bitwise_or();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
+
         expr
     }
 
@@ -356,19 +515,26 @@ impl Parser {
 
         while let Token::BarraVerticalDupla = &self.token_atual {
             let operador = Operador::BarraVerticalDupla;
+
             self.avancar();
+
             let direita = self.parse_logical_and();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
+
         expr
     }
 
     pub fn parse_comparacao(&mut self) -> Expr {
-        let mut expr = self.parse_expressao();
+        //let mut expr = self.parse_expressao();
+        let mut expr = self.parse_shift();
 
         while let Token::Maior
         | Token::Menor
@@ -379,19 +545,58 @@ impl Parser {
         {
             let operador = match &self.token_atual {
                 Token::Maior => Operador::Maior,
+
                 Token::Menor => Operador::Menor,
+
                 Token::MaiorOuIgual => Operador::MaiorOuIgual,
+
                 Token::MenorOuIgual => Operador::MenorOuIgual,
+
                 Token::Comparar => Operador::Comparar,
+
                 Token::Diferente => Operador::Diferente,
+
                 _ => unreachable!(),
             };
+
+            self.avancar();
+
+            //let direita = self.parse_expressao();
+            let direita = self.parse_shift();
+
+            expr = Expr::Binario {
+                esquerda: Box::new(expr),
+
+                operador,
+
+                direita: Box::new(direita),
+            };
+        }
+
+        expr
+    }
+
+    pub fn parse_shift(&mut self) -> Expr {
+        let mut expr = self.parse_expressao(); // Chama a precedência acima (Soma/Subtração)
+
+        while let Token::DeslocamentoEsq | Token::DeslocamentoDir = &self.token_atual {
+            let operador = match &self.token_atual {
+                Token::DeslocamentoEsq => Operador::DeslocamentoEsq,
+
+                Token::DeslocamentoDir => Operador::DeslocamentoDir,
+
+                _ => unreachable!(),
+            };
+
             self.avancar();
 
             let direita = self.parse_expressao();
+
             expr = Expr::Binario {
                 esquerda: Box::new(expr),
+
                 operador,
+
                 direita: Box::new(direita),
             };
         }
@@ -404,15 +609,18 @@ impl Parser {
 
         if self.token_atual == Token::Igual {
             self.avancar();
+
             let valor = self.parse_atribuicao();
 
             match expr_esquerda {
                 Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
                     return Expr::Atribuicao {
                         alvo: Box::new(expr_esquerda),
+
                         valor: Box::new(valor),
                     };
                 }
+
                 _ => panic!(
                     "Erro de Sintaxe: Alvo inválido para atribuição. A expressão da esquerda é: {:?}",
                     expr_esquerda
@@ -425,17 +633,22 @@ impl Parser {
         | Token::ModuloIgual = &self.token_atual
         {
             let operador = self.token_atual.clone();
+
             self.avancar();
+
             let valor = self.parse_atribuicao();
 
             match expr_esquerda {
                 Expr::Variavel(_) | Expr::AcessoArray { .. } | Expr::Unario { .. } => {
                     return Expr::AtribuicaoComposta {
                         alvo: Box::new(expr_esquerda),
+
                         operador: operador,
+
                         valor: Box::new(valor),
                     };
                 }
+
                 _ => panic!(
                     "Erro de Sintaxe: Alvo inválido para atribuição composta. A expressão da esquerda é: {:?}",
                     expr_esquerda
@@ -449,8 +662,11 @@ impl Parser {
     pub fn parse_declaracao(&mut self) -> Stmt {
         match &self.token_atual {
             Token::InclusaoGlobal(_) | Token::InclusaoLocal(_) => self.parse_diretiva_inclusao(),
+
             Token::Diretiva(_) => self.parse_diretiva_outra(),
+
             Token::AbreChave => self.parse_bloco(),
+
             Token::Identificador(nome) if nome == "if" => {
                 return self.parse_declaracao_if();
             }
@@ -471,6 +687,38 @@ impl Parser {
                 return Stmt::Retorno(valor);
             }
 
+            Token::Identificador(nome) if nome == "using" => {
+                self.avancar(); // consome "using"
+
+                if let Token::Identificador(ns_kw) = &self.token_atual {
+                    if ns_kw != "namespace" {
+                        panic!("Esperado 'namespace' após 'using'");
+                    }
+                } else {
+                    panic!("Esperado 'namespace' após 'using'");
+                }
+
+                self.avancar(); // consome "namespace"
+
+                let namespace_nome = if let Token::Identificador(nome) = &self.token_atual {
+                    nome.clone()
+                } else {
+                    panic!("Esperado nome do namespace");
+                };
+
+                self.avancar(); // consome o nome (ex: std)
+
+                if self.token_atual != Token::PontoVirgula {
+                    panic!("Esperado ';' após using namespace");
+                }
+
+                self.avancar(); // consome ';'
+
+                return Stmt::Using {
+                    namespace: namespace_nome,
+                };
+            }
+
             Token::Identificador(_) => {
                 if let Token::Identificador(_) = self.espiadinha() {
                     if let Token::AbreParentesis = self.espiar_dois_passos() {
@@ -484,6 +732,7 @@ impl Parser {
                     self.parse_declaracao_expressao()
                 }
             }
+
             _ => self.parse_declaracao_expressao(),
         }
     }
@@ -494,8 +743,10 @@ impl Parser {
         while self.token_atual != Token::Fundo {
             if self.token_atual == Token::QuebraLinha {
                 self.avancar();
+
                 continue;
             }
+
             declaracoes.push(self.parse_declaracao());
         }
 
@@ -510,12 +761,16 @@ impl Parser {
         match token_clonado {
             Token::InclusaoGlobal(path) => Stmt::Inclusao {
                 path,
+
                 is_global: true,
             },
+
             Token::InclusaoLocal(path) => Stmt::Inclusao {
                 path,
+
                 is_global: false,
             },
+
             _ => unreachable!(),
         }
     }
@@ -529,6 +784,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         let condicao = self.parse_atribuicao();
@@ -539,6 +795,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         let bloco_then = self.parse_declaracao();
@@ -563,7 +820,9 @@ impl Parser {
 
         Stmt::If {
             condicao,
+
             bloco_then: Box::new(bloco_then),
+
             bloco_else,
         }
     }
@@ -575,6 +834,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         let mut declaracoes: Vec<Stmt> = Vec::new();
@@ -582,6 +842,7 @@ impl Parser {
         while self.token_atual != Token::FechaChave && self.token_atual != Token::Fundo {
             if self.token_atual == Token::QuebraLinha {
                 self.avancar();
+
                 continue;
             }
 
@@ -594,6 +855,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         Stmt::Bloco { declaracoes }
@@ -624,7 +886,9 @@ impl Parser {
                     break;
                 }
             }
+
             tipo_retorno.push(self.token_atual.clone());
+
             self.avancar();
         }
 
@@ -634,7 +898,9 @@ impl Parser {
                 self.token_atual
             );
         }
+
         let nome = self.token_atual.clone();
+
         self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
@@ -643,6 +909,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         let mut parametros: Vec<Parametro> = Vec::new();
@@ -650,7 +917,9 @@ impl Parser {
         if self.token_atual != Token::FechaParentesis {
             loop {
                 let mut tipo_param: Vec<Token> = Vec::new();
+
                 let mut tamanho_array: Option<Expr> = None;
+
                 while self.token_atual != Token::Fundo {
                     if let Token::Identificador(_) = self.token_atual {
                         if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete =
@@ -659,7 +928,9 @@ impl Parser {
                             break;
                         }
                     }
+
                     tipo_param.push(self.token_atual.clone());
+
                     self.avancar();
                 }
 
@@ -669,7 +940,9 @@ impl Parser {
                         self.token_atual
                     );
                 }
+
                 let nome_param = self.token_atual.clone();
+
                 self.avancar();
 
                 if self.token_atual == Token::AbreColchete {
@@ -687,17 +960,21 @@ impl Parser {
                             self.token_atual
                         );
                     }
+
                     self.avancar();
                 }
 
                 parametros.push(Parametro {
                     tipo: tipo_param,
+
                     nome: nome_param,
+
                     tamanho_array,
                 });
 
                 if self.token_atual == Token::Virgula {
                     self.avancar();
+
                     continue;
                 }
 
@@ -718,6 +995,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         while self.token_atual == Token::QuebraLinha {
@@ -728,8 +1006,11 @@ impl Parser {
 
         Stmt::DeclaracaoFuncao {
             tipo_retorno,
+
             nome,
+
             parametros,
+
             corpo: Box::new(corpo),
         }
     }
@@ -744,7 +1025,9 @@ impl Parser {
                     break;
                 }
             }
+
             tipo.push(self.token_atual.clone());
+
             self.avancar();
         }
 
@@ -756,9 +1039,11 @@ impl Parser {
         }
 
         let nome = self.token_atual.clone();
+
         self.avancar();
 
         let tamanho_array: Option<Expr>;
+
         if self.token_atual == Token::AbreColchete {
             self.avancar();
 
@@ -774,14 +1059,17 @@ impl Parser {
                     self.token_atual
                 );
             }
+
             self.avancar();
         } else {
             tamanho_array = None;
         }
 
         let inicializador: Option<Expr>;
+
         if self.token_atual == Token::Igual {
             self.avancar();
+
             inicializador = Some(self.parse_atribuicao());
         } else {
             inicializador = None;
@@ -793,12 +1081,16 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         Stmt::DeclaracaoVariavel {
             tipo,
+
             nome,
+
             tamanho_array,
+
             inicializador,
         }
     }
@@ -812,6 +1104,7 @@ impl Parser {
                 self.token_atual
             );
         }
+
         self.avancar();
 
         Stmt::Expressao(expr)
