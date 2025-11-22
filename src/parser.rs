@@ -78,7 +78,7 @@ pub enum Expr {
 #[derive(Debug, Serialize)]
 pub enum Stmt {
     Expressao(Expr),
-
+    Retorno(Option<Expr>),
     DeclaracaoVariavel {
         tipo: Vec<Token>,
         nome: Token,
@@ -131,11 +131,18 @@ impl Parser {
     }
 
     pub fn avancar(&mut self) {
-        if self.posicao_atual + 1 < self.tokens.len() {
-            self.posicao_atual += 1;
-            self.token_atual = self.tokens[self.posicao_atual].clone();
-        } else {
-            self.token_atual = Token::Fundo;
+        loop {
+            if self.posicao_atual + 1 < self.tokens.len() {
+                self.posicao_atual += 1;
+                self.token_atual = self.tokens[self.posicao_atual].clone();
+            } else {
+                self.token_atual = Token::Fundo;
+                break;
+            }
+
+            if self.token_atual != Token::QuebraLinha {
+                break;
+            }
         }
     }
 
@@ -172,18 +179,6 @@ impl Parser {
                 };
             }
 
-            Token::Identificador(nome) if nome == "return" => {
-                let operador = self.token_atual.clone();
-                self.avancar();
-
-                let direita = self.parse_atribuicao();
-
-                return Expr::Unario {
-                    operador,
-                    direita: Box::new(direita),
-                };
-            }
-
             Token::AbreParentesis => {
                 self.avancar();
                 let expr = self.parse_atribuicao();
@@ -210,7 +205,7 @@ impl Parser {
             Token::Texto(valor_string) => Expr::StringLiteral(valor_string.to_string()),
             Token::Identificador(_) => Expr::Variavel(self.token_atual.clone()),
             _ => {
-                if self.token_atual == Token::Burro {
+                if self.token_atual == Token::Invalido {
                     panic!(
                         "Erro de Léxico: Caractere ilegal encontrado pelo lexer. Token: {:?}",
                         self.token_atual
@@ -462,8 +457,25 @@ impl Parser {
         match &self.token_atual {
             Token::InclusaoGlobal(_) | Token::InclusaoLocal(_) => self.parse_diretiva_inclusao(),
             Token::Diretiva(_) => self.parse_diretiva_outra(),
+            Token::AbreChave => self.parse_bloco(),
             Token::Identificador(nome) if nome == "if" => {
                 return self.parse_declaracao_if();
+            }
+
+            Token::Identificador(nome) if nome == "return" => {
+                self.avancar(); // consome a palavra "return"
+
+                let valor = if self.token_atual == Token::PontoVirgula {
+                    None // return; (vazio)
+                } else {
+                    Some(self.parse_atribuicao()) // return 10;
+                };
+
+                if self.token_atual != Token::PontoVirgula {
+                    panic!("Esperado ';' após return.");
+                }
+                self.avancar(); // consome ';'
+                return Stmt::Retorno(valor);
             }
 
             Token::Identificador(_) => {
@@ -536,7 +548,7 @@ impl Parser {
         }
         self.avancar();
 
-        let bloco_then = self.parse_bloco();
+        let bloco_then = self.parse_declaracao();
 
         let mut bloco_else: Option<Box<Stmt>> = None;
 
@@ -548,10 +560,10 @@ impl Parser {
                     if nome == "if" {
                         bloco_else = Some(Box::new(self.parse_declaracao_if()));
                     } else {
-                        bloco_else = Some(Box::new(self.parse_bloco()));
+                        bloco_else = Some(Box::new(self.parse_declaracao()));
                     }
                 } else {
-                    bloco_else = Some(Box::new(self.parse_bloco()));
+                    bloco_else = Some(Box::new(self.parse_declaracao()));
                 }
             }
         }

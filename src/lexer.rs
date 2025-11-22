@@ -67,7 +67,7 @@ impl Lexer {
         }
 
         // verifica se há um ponto decimal seguido por mais dígitos
-        if self.caractere_atual == '.' && self.espiadinha().is_digit(10) {
+        if self.caractere_atual == '.' {
             is_float = true;
             self.avancar();
 
@@ -164,7 +164,7 @@ impl Lexer {
                 let path = self.ler_path_delimitado('"');
                 return Token::InclusaoLocal(path);
             } else {
-                return Token::Burro; // formato inválido de inclusão             
+                return Token::Invalido; // formato inválido de inclusão             
             }
         } else {
             return Token::Diretiva(comando);
@@ -362,7 +362,7 @@ impl Lexer {
 
                         return Token::Identificador(identificador); // retorna o token de identificador
                     } else {
-                        Token::Burro // caractere desconhecido
+                        Token::Invalido // caractere desconhecido
                     }
                 }
             };

@@ -52,6 +52,6 @@ pub enum Token {
     Ponto,
     QuebraLinha,
 
-    Burro,
+    Invalido,
     Fundo,
 }
