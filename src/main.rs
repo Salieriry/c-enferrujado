@@ -453,5 +453,7 @@ fn imprimir_token(token: &Token) {
         Token::EComercialDuplo => print!("EComercialDuplo"),
         Token::BarraVertical => print!("BarraVertical"),
         Token::BarraVerticalDupla => print!("BarraVerticalDupla"),
+        Token::DeslocamentoEsq => print!("DeslocamentoEsq (<<)"),
+        Token::DeslocamentoDir => print!("DeslocamentoDir (>>)"),
     }
 }
