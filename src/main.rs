@@ -96,7 +96,7 @@ fn main() {
 
         // formata a impressão dos tokens
         if token == Token::QuebraLinha {
-            println!(); 
+            println!();
             token_count = 0;
             tokens.push(token);
             continue;
@@ -113,7 +113,8 @@ fn main() {
         print!("] ");
 
         token_count += 1;
-        if token_count > 5 { // quebra a linha a cada 6 tokens
+        if token_count > 5 {
+            // quebra a linha a cada 6 tokens
             println!();
             token_count = 0;
         }
@@ -129,17 +130,13 @@ fn main() {
     let mut parser = Parser::new(tokens);
     let ast_programa = parser.parse();
 
-    
     println!("\n--- SAÍDA DE DEBUG DA AST (RAW) ---");
     println!("{:#?}", ast_programa);
     println!("--- FIM DA SAÍDA DE DEBUG ---\n");
 
-
     println!("\n--- IMPRESSÃO FORMATADA DA AST ---");
     imprimir_ast_programa(&ast_programa);
-
 }
-
 
 /// função de nível superior para imprimir o programa (um vetor de Stmt)
 fn imprimir_ast_programa(programa: &Vec<Stmt>) {
@@ -160,6 +157,15 @@ fn imprimir_stmt(stmt: &Stmt, indent: usize) {
         Stmt::Expressao(expr) => {
             println!("{}Expressao:", prefix);
             imprimir_expr(expr, indent + 1);
+        }
+        Stmt::Retorno(expr_opt) => {
+            print!("return");
+            if let Some(expr) = expr_opt {
+                print!(" ");
+                // Chama a função que imprime/avalia a expressão
+                self.executar(expr)?;
+            }
+            println!(";");
         }
         Stmt::DeclaracaoVariavel {
             tipo,
@@ -309,7 +315,7 @@ fn imprimir_expr(expr: &Expr, indent: usize) {
         Expr::Atribuicao { alvo, valor } => {
             println!("{}Atribuicao:", prefix);
             println!("{}  Alvo:", prefix);
-            imprimir_expr(alvo, indent + 2); 
+            imprimir_expr(alvo, indent + 2);
             println!("{}  Valor:", prefix);
             imprimir_expr(valor, indent + 2);
         }
@@ -433,7 +439,7 @@ fn imprimir_token(token: &Token) {
         Token::MenorOuIgual => print!("MenorOuIgual"),
         Token::Diferente => print!("Diferente"),
         Token::Negacao => print!("Negacao"),
-        Token::Burro => print!("Burro"),
+        Token::Invalido => print!("Invalido"),
         Token::Fundo => print!("Fundo"),
         Token::InclusaoGlobal(p) => print!("InclusaoGlobal({})", p),
         Token::InclusaoLocal(p) => print!("InclusaoLocal({})", p),
