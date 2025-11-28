@@ -5,6 +5,7 @@ pub struct Lexer {
     fonte: Vec<char>,
     posicao: usize,
     caractere_atual: char,
+    linha: usize, // Contador de linhas
 }
 
 // implementação dos métodos do analisador léxico
@@ -20,12 +21,17 @@ impl Lexer {
             fonte,
             posicao: 0,
             caractere_atual,
+            linha: 1,
         }
     }
 
     // avança para o próximo caractere na fonte
     pub fn avancar(&mut self) {
         self.posicao += 1;
+
+        if self.caractere_atual == '\n' {
+            self.linha += 1;
+        }
 
         if self.posicao < self.fonte.len() {
             self.caractere_atual = self.fonte[self.posicao];
@@ -137,7 +143,10 @@ impl Lexer {
         }
 
         if self.caractere_atual != '\'' {
-            panic!("Erro Léxico: Char literal não fechado ou longo demais.");
+            panic!(
+                "Erro Léxico na linha {}: Char literal não fechado ou longo demais.",
+                self.linha
+            );
         }
 
         return c;
@@ -188,18 +197,20 @@ impl Lexer {
 
         return path;
     }
-    // obtém o próximo token da fonte
-    pub fn prox_token(&mut self) -> Token {
+
+    // CORREÇÃO AQUI: prox_token agora gere corretamente o avanço
+    pub fn prox_token(&mut self) -> (Token, usize) {
         loop {
             // pula espaços em branco
             while self.caractere_atual.is_whitespace() && self.caractere_atual != '\n' {
                 self.avancar();
             }
 
+            let linha_token = self.linha;
+
             // determina o tipo de token com base no caractere atual
             let token = match self.caractere_atual {
                 '\n' => Token::QuebraLinha,
-                // símbolos de pontuação
                 ';' => Token::PontoVirgula,
                 '(' => Token::AbreParentesis,
                 ')' => Token::FechaParentesis,
@@ -210,20 +221,20 @@ impl Lexer {
                 '.' => Token::Ponto,
                 ',' => Token::Virgula,
 
-                // caractere entre aspas simples
                 '\'' => {
                     let conteudo_char = self.ler_char();
                     Token::ConteudoChar(conteudo_char)
                 }
 
-                // string entre aspas duplas
                 '"' => {
                     let texto = self.ler_texto();
                     Token::Texto(texto)
                 }
 
                 '#' => {
-                    return self.ler_diretiva_pre_processador();
+                    let t = self.ler_diretiva_pre_processador();
+                    // Diretivas já consomem o necessário, retornamos direto
+                    return (t, linha_token);
                 }
 
                 // operadores e símbolos
@@ -323,7 +334,6 @@ impl Lexer {
                     }
                 }
 
-                // operadores de comparação
                 '>' => {
                     if self.espiadinha() == '=' {
                         self.avancar();
@@ -356,26 +366,29 @@ impl Lexer {
                     }
                 }
 
-                // números (inteiros e ponto flutuante)
-                '0'..='9' => return self.ler_numero(),
+                // [IMPORTANTE] Números consomem até o delimitador, então retornamos ANTES do self.avancar() final
+                '0'..='9' => {
+                    let t = self.ler_numero();
+                    return (t, linha_token);
+                }
 
                 '\0' => Token::Fundo,
 
-                // identificadores (nomes de variáveis, funções, etc.)
+                // [IMPORTANTE] Identificadores consomem até o delimitador, retornamos ANTES do self.avancar() final
                 _ => {
                     if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
-                        let identificador = self.ler_identificador(); // lê o identificador
-
-                        return Token::Identificador(identificador); // retorna o token de identificador
+                        let identificador = self.ler_identificador();
+                        return (Token::Identificador(identificador), linha_token);
                     } else {
-                        Token::Invalido // caractere desconhecido
+                        Token::Invalido
                     }
                 }
             };
 
-            self.avancar(); // avança para o próximo caractere após reconhecer o token
+            // Para caracteres simples, strings e operadores, precisamos avançar mais um para consumir o char atual
+            self.avancar();
 
-            return token;
+            return (token, linha_token);
         }
     }
 }

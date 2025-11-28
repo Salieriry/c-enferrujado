@@ -3,7 +3,11 @@ use crate::parser::{Expr, Operador};
 pub fn avaliar(expressao: &Expr) -> f64 {
     match expressao {
         Expr::Numero(valor) => *valor,
-        Expr::Binario { esquerda, operador, direita } => {
+        Expr::Binario {
+            esquerda,
+            operador,
+            direita,
+        } => {
             let valor_esquerda = avaliar(esquerda);
             let valor_direita = avaliar(direita);
 
