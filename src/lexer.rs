@@ -5,6 +5,7 @@ pub struct Lexer {
     fonte: Vec<char>,
     posicao: usize,
     caractere_atual: char,
+    linha: usize, // [NOVO] Contador de linhas
 }
 
 // implementação dos métodos do analisador léxico
@@ -20,12 +21,18 @@ impl Lexer {
             fonte,
             posicao: 0,
             caractere_atual,
+            linha: 1, // [NOVO] Começamos na linha 1
         }
     }
 
     // avança para o próximo caractere na fonte
     pub fn avancar(&mut self) {
         self.posicao += 1;
+
+        // [NOVO] Se o caractere que acabamos de processar for uma quebra de linha, incrementamos o contador
+        if self.caractere_atual == '\n' {
+            self.linha += 1;
+        }
 
         if self.posicao < self.fonte.len() {
             self.caractere_atual = self.fonte[self.posicao];
@@ -137,7 +144,7 @@ impl Lexer {
         }
 
         if self.caractere_atual != '\'' {
-            panic!("Erro Léxico: Char literal não fechado ou longo demais.");
+            panic!("Erro Léxico na linha {}: Char literal não fechado ou longo demais.", self.linha);
         }
 
         return c;
@@ -188,13 +195,18 @@ impl Lexer {
 
         return path;
     }
+    
     // obtém o próximo token da fonte
-    pub fn prox_token(&mut self) -> Token {
+    // [NOVO] Retorna uma tupla (Token, linha)
+    pub fn prox_token(&mut self) -> (Token, usize) {
         loop {
-            // pula espaços em branco
+            // pula espaços em branco (exceto \n, pois ele é um token relevante para o lexer atual)
             while self.caractere_atual.is_whitespace() && self.caractere_atual != '\n' {
                 self.avancar();
             }
+
+            // [NOVO] Captura a linha atual ANTES de avançar o caractere
+            let linha_token = self.linha;
 
             // determina o tipo de token com base no caractere atual
             let token = match self.caractere_atual {
@@ -223,7 +235,8 @@ impl Lexer {
                 }
 
                 '#' => {
-                    return self.ler_diretiva_pre_processador();
+                    // Nota: diretivas podem consumir caracteres, mas usamos a linha de início
+                    self.ler_diretiva_pre_processador()
                 }
 
                 // operadores e símbolos
@@ -357,7 +370,10 @@ impl Lexer {
                 }
 
                 // números (inteiros e ponto flutuante)
-                '0'..='9' => return self.ler_numero(),
+                '0'..='9' => {
+                     // Nota: ler_numero consome caracteres, mas usamos a linha onde começou
+                     self.ler_numero()
+                },
 
                 '\0' => Token::Fundo,
 
@@ -365,8 +381,7 @@ impl Lexer {
                 _ => {
                     if self.caractere_atual.is_alphabetic() || self.caractere_atual == '_' {
                         let identificador = self.ler_identificador(); // lê o identificador
-
-                        return Token::Identificador(identificador); // retorna o token de identificador
+                        Token::Identificador(identificador) // retorna o token de identificador
                     } else {
                         Token::Invalido // caractere desconhecido
                     }
@@ -375,7 +390,8 @@ impl Lexer {
 
             self.avancar(); // avança para o próximo caractere após reconhecer o token
 
-            return token;
+            // [NOVO] Retorna a tupla com o token e a linha
+            return (token, linha_token);
         }
     }
 }
