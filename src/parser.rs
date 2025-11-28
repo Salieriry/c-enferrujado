@@ -1,7 +1,6 @@
 use core::panic;
 
 use crate::token::Token;
-
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
@@ -108,15 +107,13 @@ pub enum Stmt {
 }
 
 pub struct Parser {
-    // [NOVO] Alterado para armazenar Token e Linha
     tokens: Vec<(Token, usize)>,
     posicao_atual: usize,
     token_atual: Token,
-    linha_atual: usize, // [NOVO] Rastreia a linha atual para erros
+    linha_atual: usize, 
 }
 
 impl Parser {
-    // [NOVO] Construtor aceita Vec<(Token, usize)>
     pub fn new(tokens: Vec<(Token, usize)>) -> Self {
         let (token_atual, linha_atual) = if tokens.is_empty() {
             (Token::Fundo, 0)
@@ -135,7 +132,6 @@ impl Parser {
     pub fn avancar(&mut self) {
         if self.posicao_atual + 1 < self.tokens.len() {
             self.posicao_atual += 1;
-            // [NOVO] Desempacota token e linha
             let (tok, lin) = self.tokens[self.posicao_atual].clone();
             self.token_atual = tok;
             self.linha_atual = lin;
@@ -144,7 +140,6 @@ impl Parser {
         }
     }
 
-    // [NOVO] Espiadinha agora olha apenas para o token da tupla
     fn espiadinha(&self) -> Token {
         if self.posicao_atual + 1 < self.tokens.len() {
             self.tokens[self.posicao_atual + 1].0.clone()
@@ -153,7 +148,6 @@ impl Parser {
         }
     }
 
-    // [NOVO] Espiar dois passos agora olha apenas para o token da tupla
     fn espiar_dois_passos(&self) -> Token {
         if self.posicao_atual + 2 < self.tokens.len() {
             self.tokens[self.posicao_atual + 2].0.clone()
@@ -162,7 +156,6 @@ impl Parser {
         }
     }
 
-    // [NOVO] Método auxiliar para disparar erros formatados
     fn erro(&self, mensagem: String) -> ! {
         panic!("Erro na linha {}: {}", self.linha_atual, mensagem);
     }
@@ -217,32 +210,28 @@ impl Parser {
             Token::Texto(valor_string) => Expr::StringLiteral(valor_string.to_string()),
 
             Token::Identificador(_) => {
-                // Verifica se o próximo token é um '(', indicando uma função
                 if self.espiadinha() == Token::AbreParentesis {
                     let nome = self.token_atual.clone();
-                    self.avancar(); // consome o nome (Identificador)
+                    self.avancar();
 
-                    // Agora token_atual é '(', vamos avançar para o primeiro argumento
                     self.avancar();
 
                     let mut argumentos = Vec::new();
 
-                    // Se não for logo um ')', temos argumentos para ler
                     if self.token_atual != Token::FechaParentesis {
                         loop {
                             argumentos.push(self.parse_atribuicao());
                             if self.token_atual == Token::Virgula {
-                                self.avancar(); // consome ',' e vai para o próximo argumento
+                                self.avancar();
                             } else {
                                 break;
                             }
                         }
                     }
 
-                    // Verifica se fechou os parênteses
                     if self.token_atual != Token::FechaParentesis {
                         self.erro(format!(
-                            "Esperado ')' após argumentos, recebido {:?}",
+                            "esperado ')' após argumentos, recebido {:?}",
                             self.token_atual
                         ));
                     }
@@ -252,7 +241,6 @@ impl Parser {
                         argumentos,
                     }
                 } else {
-                    // Se não tem '(', é apenas uma variável simples
                     Expr::Variavel(self.token_atual.clone())
                 }
             }
@@ -514,23 +502,23 @@ impl Parser {
             }
 
             Token::Identificador(nome) if nome == "return" => {
-                self.avancar(); // consome a palavra "return"
+                self.avancar();
 
                 let valor = if self.token_atual == Token::PontoVirgula {
-                    None // return; (vazio)
+                    None
                 } else {
-                    Some(self.parse_atribuicao()) // return 10;
+                    Some(self.parse_atribuicao())
                 };
 
                 if self.token_atual != Token::PontoVirgula {
-                    self.erro("Esperado ';' após return.".to_string());
+                    self.erro("esperado ';' após return".to_string());
                 }
-                self.avancar(); // consome ';'
+                self.avancar();
                 return Stmt::Retorno(valor);
             }
 
             Token::Identificador(nome) if nome == "using" => {
-                self.avancar(); // consome "using"
+                self.avancar();
 
                 if let Token::Identificador(ns_kw) = &self.token_atual {
                     if ns_kw != "namespace" {
@@ -540,22 +528,22 @@ impl Parser {
                     self.erro("Esperado 'namespace' após 'using'".to_string());
                 }
 
-                self.avancar(); // consome "namespace"
+                self.avancar();
 
                 let namespace_nome = if let Token::Identificador(nome) = &self.token_atual {
                     nome.clone()
                 } else {
                     self.erro("Esperado nome do namespace".to_string());
-                    unreachable!() // nunca chega aqui por causa do erro/panic
+                    unreachable!()
                 };
 
-                self.avancar(); // consome o nome (ex: std)
+                self.avancar();
 
                 if self.token_atual != Token::PontoVirgula {
-                    self.erro("Esperado ';' após using namespace".to_string());
+                    self.erro("esperado ';' após using namespace".to_string());
                 }
 
-                self.avancar(); // consome ';'
+                self.avancar();
 
                 return Stmt::Using {
                     namespace: namespace_nome,
