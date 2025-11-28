@@ -21,7 +21,7 @@ impl Lexer {
             fonte,
             posicao: 0,
             caractere_atual,
-            linha: 1, 
+            linha: 1,
         }
     }
 
@@ -143,7 +143,10 @@ impl Lexer {
         }
 
         if self.caractere_atual != '\'' {
-            panic!("Erro Léxico na linha {}: Char literal não fechado ou longo demais.", self.linha);
+            panic!(
+                "Erro Léxico na linha {}: Char literal não fechado ou longo demais.",
+                self.linha
+            );
         }
 
         return c;
@@ -194,7 +197,7 @@ impl Lexer {
 
         return path;
     }
-    
+
     // CORREÇÃO AQUI: prox_token agora gere corretamente o avanço
     pub fn prox_token(&mut self) -> (Token, usize) {
         loop {
@@ -365,9 +368,9 @@ impl Lexer {
 
                 // [IMPORTANTE] Números consomem até o delimitador, então retornamos ANTES do self.avancar() final
                 '0'..='9' => {
-                     let t = self.ler_numero();
-                     return (t, linha_token);
-                },
+                    let t = self.ler_numero();
+                    return (t, linha_token);
+                }
 
                 '\0' => Token::Fundo,
 

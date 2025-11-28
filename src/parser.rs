@@ -190,7 +190,10 @@ impl Parser {
                 if let Token::FechaParentesis = self.token_atual {
                     self.avancar();
                 } else {
-                    self.erro(format!("Esperado ')', mas foi recebido {:?}", self.token_atual));
+                    self.erro(format!(
+                        "Esperado ')', mas foi recebido {:?}",
+                        self.token_atual
+                    ));
                 }
                 return Expr::Agrupamento(Box::new(expr));
             }
@@ -238,7 +241,10 @@ impl Parser {
 
                     // Verifica se fechou os parênteses
                     if self.token_atual != Token::FechaParentesis {
-                        self.erro(format!("Esperado ')' após argumentos, recebido {:?}", self.token_atual));
+                        self.erro(format!(
+                            "Esperado ')' após argumentos, recebido {:?}",
+                            self.token_atual
+                        ));
                     }
 
                     Expr::ChamadaFuncao {
@@ -251,7 +257,10 @@ impl Parser {
                 }
             }
 
-            _ => self.erro(format!("Esperado primário, recebido {:?}", self.token_atual)),
+            _ => self.erro(format!(
+                "Esperado primário, recebido {:?}",
+                self.token_atual
+            )),
         };
 
         self.avancar();
@@ -276,7 +285,10 @@ impl Parser {
                     self.avancar();
                     let indice = self.parse_atribuicao();
                     if self.token_atual != Token::FechaColchete {
-                        self.erro(format!("Esperando ']' após o índice do array, mas foi recebido {:?}", self.token_atual));
+                        self.erro(format!(
+                            "Esperando ']' após o índice do array, mas foi recebido {:?}",
+                            self.token_atual
+                        ));
                     }
                     self.avancar();
                     expr = Expr::AcessoArray {
@@ -602,14 +614,20 @@ impl Parser {
         self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
-            self.erro(format!("Esperado '(' após 'if', mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado '(' após 'if', mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
         let condicao = self.parse_atribuicao();
 
         if self.token_atual != Token::FechaParentesis {
-            self.erro(format!("Esperado ')' após condição do 'if', mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado ')' após condição do 'if', mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -641,7 +659,10 @@ impl Parser {
 
     pub fn parse_bloco(&mut self) -> Stmt {
         if self.token_atual != Token::AbreChave {
-            self.erro(format!("Esperado '{{' para iniciar o bloco, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado '{{' para iniciar o bloco, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -656,7 +677,10 @@ impl Parser {
         }
 
         if self.token_atual != Token::FechaChave {
-            self.erro(format!("Esperado '}}' para fechar o bloco, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado '}}' para fechar o bloco, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -692,14 +716,20 @@ impl Parser {
         }
 
         if !matches!(self.token_atual, Token::Identificador(_)) {
-            self.erro(format!("Esperado nome da função após o tipo de retorno, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado nome da função após o tipo de retorno, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         let nome = self.token_atual.clone();
         self.avancar();
 
         if self.token_atual != Token::AbreParentesis {
-            self.erro(format!("Esperado '(' após o nome da função, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado '(' após o nome da função, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -712,7 +742,9 @@ impl Parser {
 
                 while self.token_atual != Token::Fundo {
                     if let Token::Identificador(_) = self.token_atual {
-                        if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete = self.espiadinha() {
+                        if let Token::Virgula | Token::FechaParentesis | Token::AbreColchete =
+                            self.espiadinha()
+                        {
                             break;
                         }
                     }
@@ -721,7 +753,10 @@ impl Parser {
                 }
 
                 if !matches!(self.token_atual, Token::Identificador(_)) {
-                    self.erro(format!("Esperado nome do parâmetro na declaração da função, mas foi recebido {:?}", self.token_atual));
+                    self.erro(format!(
+                        "Esperado nome do parâmetro na declaração da função, mas foi recebido {:?}",
+                        self.token_atual
+                    ));
                 }
 
                 let nome_param = self.token_atual.clone();
@@ -736,7 +771,10 @@ impl Parser {
                     }
 
                     if self.token_atual != Token::FechaColchete {
-                        self.erro(format!("Esperado ']' em parâmetro de array, mas foi recebido {:?}", self.token_atual));
+                        self.erro(format!(
+                            "Esperado ']' em parâmetro de array, mas foi recebido {:?}",
+                            self.token_atual
+                        ));
                     }
                     self.avancar();
                 }
@@ -755,13 +793,19 @@ impl Parser {
                 if self.token_atual == Token::FechaParentesis {
                     break;
                 } else {
-                    self.erro(format!("Esperado ',' ou ')' após parâmetro de função, mas foi recebido {:?}", self.token_atual));
+                    self.erro(format!(
+                        "Esperado ',' ou ')' após parâmetro de função, mas foi recebido {:?}",
+                        self.token_atual
+                    ));
                 }
             }
         }
 
         if self.token_atual != Token::FechaParentesis {
-            self.erro(format!("Esperado ')' após os parâmetros da função, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado ')' após os parâmetros da função, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -784,7 +828,8 @@ impl Parser {
 
         while self.token_atual != Token::Fundo {
             if let Token::Identificador(_) = self.token_atual {
-                if let Token::Igual | Token::PontoVirgula | Token::AbreColchete = self.espiadinha() {
+                if let Token::Igual | Token::PontoVirgula | Token::AbreColchete = self.espiadinha()
+                {
                     break;
                 }
             }
@@ -793,7 +838,10 @@ impl Parser {
         }
 
         if !matches!(self.token_atual, Token::Identificador(_)) {
-            self.erro(format!("Esperado nome de variável após o tipo, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado nome de variável após o tipo, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         let nome = self.token_atual.clone();
@@ -810,7 +858,10 @@ impl Parser {
             }
 
             if self.token_atual != Token::FechaColchete {
-                self.erro(format!("Esperado ']' após tamanho do array, mas foi recebido {:?}", self.token_atual));
+                self.erro(format!(
+                    "Esperado ']' após tamanho do array, mas foi recebido {:?}",
+                    self.token_atual
+                ));
             }
             self.avancar();
         } else {
@@ -827,7 +878,10 @@ impl Parser {
         }
 
         if self.token_atual != Token::PontoVirgula {
-            self.erro(format!("Esperado ';' após declaração de variável, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado ';' após declaração de variável, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
@@ -844,7 +898,10 @@ impl Parser {
         let expr = self.parse_atribuicao();
 
         if self.token_atual != Token::PontoVirgula {
-            self.erro(format!("Esperado ';' após expressão, mas foi recebido {:?}", self.token_atual));
+            self.erro(format!(
+                "Esperado ';' após expressão, mas foi recebido {:?}",
+                self.token_atual
+            ));
         }
 
         self.avancar();
